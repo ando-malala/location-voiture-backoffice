@@ -19,41 +19,37 @@ public class Reservation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "client_info")
     private String clientInfo;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vehicle_id")
-    private Vehicle vehicle;
-
-    @Column(name = "number_of_passengers")
     private Integer numberOfPassengers;
 
-    @Column(name = "arrival_date", nullable = false)
+    @Column(nullable = false)
     private LocalDateTime arrivalDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reservation_status_id", nullable = false)
+    @JoinColumn(nullable = false)
     private ReservationStatus reservationStatus;
 
-    @Column(name = "created_at")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false)
+    private Hostel hostel;
+
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     public Reservation() {
     }
 
-    public Reservation(Long id, String clientInfo, Vehicle vehicle, Integer numberOfPassengers,
-            LocalDateTime arrivalDate, ReservationStatus reservationStatus, LocalDateTime createdAt,
-            LocalDateTime updatedAt) {
+    public Reservation(Long id, String clientInfo, Integer numberOfPassengers,
+            LocalDateTime arrivalDate, ReservationStatus reservationStatus, Hostel hostel,
+            LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.clientInfo = clientInfo;
-        this.vehicle = vehicle;
         this.numberOfPassengers = numberOfPassengers;
         this.arrivalDate = arrivalDate;
         this.reservationStatus = reservationStatus;
+        this.hostel = hostel;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -74,12 +70,12 @@ public class Reservation {
         this.clientInfo = clientInfo;
     }
 
-    public Vehicle getVehicle() {
-        return vehicle;
+    public Hostel getHostel() {
+        return hostel;
     }
 
-    public void setVehicle(Vehicle vehicle) {
-        this.vehicle = vehicle;
+    public void setHostel(Hostel hostel) {
+        this.hostel = hostel;
     }
 
     public Integer getNumberOfPassengers() {

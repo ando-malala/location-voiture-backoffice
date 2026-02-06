@@ -20,23 +20,19 @@ public class DepartureOrder {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vehicle_id")
     private Vehicle vehicle;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reservation_id", nullable = false)
+    @JoinColumn(nullable = false)
     private Reservation reservation;
 
-    @Column(name = "departure_date", nullable = false)
+    @Column(nullable = false)
     private LocalDateTime departureDate;
 
-    @Column(name = "number_of_passengers")
     private Integer numberOfPassengers;
 
-    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     public DepartureOrder() {

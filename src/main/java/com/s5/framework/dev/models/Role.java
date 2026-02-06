@@ -16,16 +16,15 @@ public class Role {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "code", unique = true, nullable = false)
+    @Column(unique = true, nullable = false)
     private String code;
 
-    @Column(name = "label", nullable = false)
+    @Column(nullable = false)
     private String label;
 
-    @Column(name = "level", nullable = false)
+    @Column(nullable = false)
     private Integer level;
 
-    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     public Role() {

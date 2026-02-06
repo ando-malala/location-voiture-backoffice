@@ -15,10 +15,9 @@ public class VehicleType {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "code", unique = true, nullable = false)
+    @Column(unique = true, nullable = false)
     private String code;
 
-    @Column(name = "description")
     private String description;
 
     public VehicleType() {

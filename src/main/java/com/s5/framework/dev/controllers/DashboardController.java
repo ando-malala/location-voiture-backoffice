@@ -5,23 +5,27 @@ import com.maharavo.flame.stereotype.Controller;
 import com.maharavo.flame.web.bind.GetMapping;
 import com.s5.framework.dev.models.Vehicle;
 import com.s5.framework.dev.services.VehicleService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.s5.framework.dev.config.ApplicationContextProvider;
 
 import java.util.List;
 
 @Controller
 public class DashboardController {
 
-    private final VehicleService vehicleService;
+    private VehicleService vehicleService;
 
-    @Autowired
-    public DashboardController(VehicleService vehicleService) {
-        this.vehicleService = vehicleService;
+    public DashboardController() {
+    }
+
+    private VehicleService getVehicleService() {
+        if (this.vehicleService == null)
+            this.vehicleService = ApplicationContextProvider.getBean(VehicleService.class);
+        return this.vehicleService;
     }
 
     @GetMapping("/test")
     public ModelView index() {
-        List<Vehicle> vehicles = vehicleService.findAll();
+        List<Vehicle> vehicles = getVehicleService().findAllWithAssociations();
         ModelView modelView = new ModelView("index");
         modelView.add("vehicles", vehicles);
         modelView.add("title", "Liste des véhicules");

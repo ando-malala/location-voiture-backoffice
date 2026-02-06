@@ -19,38 +19,32 @@ public class Vehicle {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "vin", unique = true)
+    @Column(unique = true)
     private String vin;
 
-    @Column(name = "license_plate", unique = true, nullable = false)
+    @Column(unique = true, nullable = false)
     private String licensePlate;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "model_id", nullable = false)
+    @JoinColumn(nullable = false)
     private VehicleModel model;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "type_id")
     private VehicleType type;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "location_id")
     private Location location;
 
-    @Column(name = "color")
     private String color;
 
-    @Column(name = "year")
     private Integer year;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vehicle_status_id", nullable = false)
+    @JoinColumn(nullable = false)
     private VehicleStatus vehicleStatus;
 
-    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     public Vehicle() {

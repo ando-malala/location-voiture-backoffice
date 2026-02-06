@@ -1,4 +1,6 @@
 com/s5/framework/dev/repositories/RoleRepository.class
+com/s5/framework/dev/repositories/SettingRepository.class
+com/s5/framework/dev/repositories/ReservationStatusRepository.class
 com/s5/framework/dev/repositories/BrandRepository.class
 com/s5/framework/dev/controllers/DashboardController.class
 com/s5/framework/dev/models/Role.class
@@ -7,11 +9,13 @@ com/s5/framework/dev/models/Maintenance.class
 com/s5/framework/dev/models/VehicleModel.class
 com/s5/framework/dev/models/Location.class
 com/s5/framework/dev/services/UserService.class
+com/s5/framework/dev/repositories/DepartureOrderRepository.class
 com/s5/framework/dev/repositories/VehicleModelRepository.class
 com/s5/framework/dev/repositories/LocationRepository.class
 com/s5/framework/dev/models/Setting.class
 com/s5/framework/dev/models/DepartureOrder.class
 com/s5/framework/dev/models/VehicleStatus.class
+com/s5/framework/dev/repositories/HostelRepository.class
 com/s5/framework/dev/BackofficeApplication.class
 com/s5/framework/dev/models/User.class
 com/s5/framework/dev/repositories/VehicleRepository.class
@@ -22,6 +26,7 @@ com/s5/framework/dev/services/ReservationService.class
 com/s5/framework/dev/repositories/VehicleStatusRepository.class
 com/s5/framework/dev/models/Reservation.class
 com/s5/framework/dev/models/VehicleType.class
+com/s5/framework/dev/config/ApplicationContextProvider.class
 com/s5/framework/dev/models/Brand.class
 com/s5/framework/dev/services/VehicleService.class
 com/s5/framework/dev/models/Hostel.class

@@ -1,6 +1,5 @@
 package com.s5.framework.dev.models;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -21,22 +20,17 @@ public class Maintenance {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vehicle_id", nullable = false)
+    @JoinColumn(nullable = false)
     private Vehicle vehicle;
 
-    @Column(name = "description")
     private String description;
 
-    @Column(name = "cost")
     private java.math.BigDecimal cost;
 
-    @Column(name = "maintenance_date")
     private LocalDate maintenanceDate;
 
-    @Column(name = "mileage")
     private Integer mileage;
 
-    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     public Maintenance() {

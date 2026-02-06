@@ -1,7 +1,10 @@
 /home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/models/VehicleStatus.java
+/home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/repositories/ReservationStatusRepository.java
 /home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/BackofficeApplication.java
 /home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/repositories/VehicleStatusRepository.java
 /home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/repositories/VehicleModelRepository.java
+/home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/repositories/SettingRepository.java
+/home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/repositories/HostelRepository.java
 /home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/repositories/RoleRepository.java
 /home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/repositories/VehicleTypeRepository.java
 /home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/services/UserService.java
@@ -13,6 +16,7 @@
 /home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/repositories/ClientRepository.java
 /home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/services/ReservationService.java
 /home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/models/Hostel.java
+/home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/repositories/DepartureOrderRepository.java
 /home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/models/Maintenance.java
 /home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/repositories/VehicleRepository.java
 /home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/repositories/ReservationRepository.java
@@ -20,6 +24,7 @@
 /home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/models/VehicleType.java
 /home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/services/VehicleService.java
 /home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/models/Client.java
+/home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/config/ApplicationContextProvider.java
 /home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/models/ReservationStatus.java
 /home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/repositories/LocationRepository.java
 /home/maharavo/ITU/S5/Mr Naina/Projets/frameworkDevProject/backoffice/src/main/java/com/s5/framework/dev/models/DepartureOrder.java

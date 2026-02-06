@@ -24,10 +24,6 @@ public class ReservationService {
         return reservationRepository.findAll();
     }
 
-    public List<Reservation> findAllWithAssociations() {
-        return reservationRepository.findAllWithAssociations();
-    }
-
     public Optional<Reservation> findById(Long id) {
         return reservationRepository.findById(id);
     }
