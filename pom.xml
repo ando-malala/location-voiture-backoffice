@@ -36,14 +36,13 @@
       <artifactId>spring-boot-starter-data-jpa</artifactId>
     </dependency>
 
-    <!-- JAR you already installed in local repo -->
+    <!-- Spring Boot Starter Thymeleaf -->
     <dependency>
-      <groupId>com.jakarta</groupId>
-      <artifactId>flame-core</artifactId>
-      <version>1.0.0</version>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-thymeleaf</artifactId>
     </dependency>
 
-    <!-- Gson from Maven Central (matches lib/gson-2.10.1.jar) -->
+    <!-- Gson from Maven Central -->
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
@@ -57,18 +56,18 @@
       <scope>runtime</scope>
     </dependency>
 
-    <!-- Spring Boot Starter Tomcat (provided for WAR) -->
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-tomcat</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
     <!-- Spring Boot Starter Test -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
+    </dependency>
+
+    <!-- Spring Boot Starter Tomcat (provided for WAR deployment) -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-tomcat</artifactId>
+      <scope>provided</scope>
     </dependency>
 
     <!-- H2 in-memory DB for tests -->

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liste des Réservations</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-4">
+    <h1>Réservations</h1>
+
+    <!-- Navigation -->
+    <nav class="mb-3">
+        <a th:href="@{/reservations/new}" class="btn btn-primary">+ Nouvelle Réservation</a>
+        <a th:href="@{/hostels}" class="btn btn-outline-secondary ms-2">Voir les Hôtels</a>
+    </nav>
+
+    <!-- Filtre par date -->
+    <form method="get" th:action="@{/reservations}" class="row g-3 mb-4">
+        <div class="col-auto">
+            <label for="date" class="col-form-label">Filtrer par date :</label>
+        </div>
+        <div class="col-auto">
+            <input type="date" id="date" name="date" class="form-control"
+                   th:value="${filterDate}">
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-info">Rechercher</button>
+            <a th:href="@{/reservations}" class="btn btn-outline-secondary ms-1">Tout afficher</a>
+        </div>
+    </form>
+
+    <!-- Tableau des réservations -->
+    <table class="table table-striped table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>ID Client</th>
+                <th>Nb Passagers</th>
+                <th>Date / Heure</th>
+                <th>Hôtel</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="r : ${reservations}">
+                <td th:text="${r.id}"></td>
+                <td th:text="${r.idClient}"></td>
+                <td th:text="${r.nbPassager}"></td>
+                <td th:text="${#temporals.format(r.dateHeure, 'dd/MM/yyyy')}"></td>
+                <td th:text="${r.hotel.nom}"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(reservations)}">
+                <td colspan="5" class="text-center text-muted">Aucune réservation trouvée.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Section API -->
+    <hr>
+    <h3>API REST disponibles (pour le Front-End)</h3>
+    <table class="table table-bordered">
+        <thead class="table-secondary">
+            <tr>
+                <th>Méthode</th>
+                <th>URL</th>
+                <th>Description</th>
+                <th>Body (POST)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><span class="badge bg-success">GET</span></td>
+                <td><code>/api/reservations</code></td>
+                <td>Liste toutes les réservations</td>
+                <td>—</td>
+            </tr>
+            <tr>
+                <td><span class="badge bg-success">GET</span></td>
+                <td><code>/api/reservations/{id}</code></td>
+                <td>Récupère une réservation par ID</td>
+                <td>—</td>
+            </tr>
+            <tr>
+                <td><span class="badge bg-success">GET</span></td>
+                <td><code>/api/reservations/date/{yyyy-MM-dd}</code></td>
+                <td>Recherche par date (sans heure)</td>
+                <td>—</td>
+            </tr>
+            <tr>
+                <td><span class="badge bg-warning text-dark">POST</span></td>
+                <td><code>/api/reservations</code></td>
+                <td>Crée une nouvelle réservation</td>
+                <td>
+                    <pre class="mb-0">{
+  "idClient": "C001",
+  "nbPassager": 3,
+  "dateHeure": "2026-02-10",
+  "hotel": { "id": 1 }
+}</pre>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
