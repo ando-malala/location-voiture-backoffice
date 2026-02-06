@@ -1,0 +1,42 @@
+# Fichiers et dossiers à ignorer pour un projet Java/Maven
+# (Ajoutez ou modifiez selon vos besoins)
+
+# Build / output
+/target/
+/build/
+/out/
+
+# Packages
+*.war
+*.ear
+
+# Compiled class files
+*.class
+
+# Logs
+*.log
+logs/
+
+# IDEs
+/.idea/
+/.vscode/
+*.iml
+.classpath
+.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Maven
+dependency-reduced-pom.xml
+release.properties
+
+# Others
+coverage/
+*.tmp
+*.cache
+
+# BDD / SQL dumps (si vous ne souhaitez pas versionner les dumps)
+# bdd/*.sql
