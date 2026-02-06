@@ -9,49 +9,38 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.Objects;
 
 @Entity
-@Table(name = "reservations")
+@Table(name = "reservation")
 public class Reservation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String clientInfo;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "idhotel", nullable = false)
+    private Hostel hotel;
 
-    private Integer numberOfPassengers;
+    @Column(name = "idclient", nullable = false)
+    private String idClient;
 
-    @Column(nullable = false)
-    private LocalDateTime arrivalDate;
+    @Column(name = "nbpassager", nullable = false)
+    private Integer nbPassager;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(nullable = false)
-    private ReservationStatus reservationStatus;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(nullable = false)
-    private Hostel hostel;
-
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
+    @Column(name = "dateheure", nullable = false)
+    private LocalDate dateHeure;
 
     public Reservation() {
     }
 
-    public Reservation(Long id, String clientInfo, Integer numberOfPassengers,
-            LocalDateTime arrivalDate, ReservationStatus reservationStatus, Hostel hostel,
-            LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public Reservation(Long id, Hostel hotel, String idClient, Integer nbPassager, LocalDate dateHeure) {
         this.id = id;
-        this.clientInfo = clientInfo;
-        this.numberOfPassengers = numberOfPassengers;
-        this.arrivalDate = arrivalDate;
-        this.reservationStatus = reservationStatus;
-        this.hostel = hostel;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
+        this.hotel = hotel;
+        this.idClient = idClient;
+        this.nbPassager = nbPassager;
+        this.dateHeure = dateHeure;
     }
 
     public Long getId() {
@@ -62,60 +51,36 @@ public class Reservation {
         this.id = id;
     }
 
-    public String getClientInfo() {
-        return clientInfo;
+    public Hostel getHotel() {
+        return hotel;
     }
 
-    public void setClientInfo(String clientInfo) {
-        this.clientInfo = clientInfo;
+    public void setHotel(Hostel hotel) {
+        this.hotel = hotel;
     }
 
-    public Hostel getHostel() {
-        return hostel;
+    public String getIdClient() {
+        return idClient;
     }
 
-    public void setHostel(Hostel hostel) {
-        this.hostel = hostel;
+    public void setIdClient(String idClient) {
+        this.idClient = idClient;
     }
 
-    public Integer getNumberOfPassengers() {
-        return numberOfPassengers;
+    public Integer getNbPassager() {
+        return nbPassager;
     }
 
-    public void setNumberOfPassengers(Integer numberOfPassengers) {
-        this.numberOfPassengers = numberOfPassengers;
+    public void setNbPassager(Integer nbPassager) {
+        this.nbPassager = nbPassager;
     }
 
-    public LocalDateTime getArrivalDate() {
-        return arrivalDate;
+    public LocalDate getDateHeure() {
+        return dateHeure;
     }
 
-    public void setArrivalDate(LocalDateTime arrivalDate) {
-        this.arrivalDate = arrivalDate;
-    }
-
-    public ReservationStatus getReservationStatus() {
-        return reservationStatus;
-    }
-
-    public void setReservationStatus(ReservationStatus reservationStatus) {
-        this.reservationStatus = reservationStatus;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
+    public void setDateHeure(LocalDate dateHeure) {
+        this.dateHeure = dateHeure;
     }
 
     @Override
@@ -135,6 +100,6 @@ public class Reservation {
 
     @Override
     public String toString() {
-        return "Reservation{" + "id=" + id + "'," + " clientInfo='" + clientInfo + '\'' + '}';
+        return "Reservation{" + "id=" + id + ", idClient='" + idClient + '\'' + '}';
     }
 }

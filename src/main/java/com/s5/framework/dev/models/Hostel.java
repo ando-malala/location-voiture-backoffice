@@ -6,41 +6,24 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
 import java.util.Objects;
 
 @Entity
-@Table(name = "hostels")
+@Table(name = "hotel")
 public class Hostel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String name;
-
-    @Column(nullable = false)
-    private BigDecimal distance;
-
-    private String address;
-
-    private String city;
-
-    private String email;
-
-    private String phone;
+    @Column(name = "nom", nullable = false, length = 100)
+    private String nom;
 
     public Hostel() {
     }
 
-    public Hostel(Long id, String name, BigDecimal distance, String address, String city, String email, String phone) {
+    public Hostel(Long id, String nom) {
         this.id = id;
-        this.name = name;
-        this.distance = distance;
-        this.address = address;
-        this.city = city;
-        this.email = email;
-        this.phone = phone;
+        this.nom = nom;
     }
 
     public Long getId() {
@@ -51,52 +34,12 @@ public class Hostel {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public String getNom() {
+        return nom;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public BigDecimal getDistance() {
-        return distance;
-    }
-
-    public void setDistance(BigDecimal distance) {
-        this.distance = distance;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public String getCity() {
-        return city;
-    }
-
-    public void setCity(String city) {
-        this.city = city;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
+    public void setNom(String nom) {
+        this.nom = nom;
     }
 
     @Override
@@ -116,6 +59,6 @@ public class Hostel {
 
     @Override
     public String toString() {
-        return "Hostel{" + "id=" + id + ", name='" + name + '\'' + '}';
+        return "Hostel{" + "id=" + id + ", nom='" + nom + '\'' + '}';
     }
 }

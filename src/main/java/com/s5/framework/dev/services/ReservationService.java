@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,6 +27,13 @@ public class ReservationService {
 
     public Optional<Reservation> findById(Long id) {
         return reservationRepository.findById(id);
+    }
+
+    /**
+     * Recherche par date.
+     */
+    public List<Reservation> findByDate(LocalDate date) {
+        return reservationRepository.findByDateHeure(date);
     }
 
     public Reservation create(Reservation reservation) {

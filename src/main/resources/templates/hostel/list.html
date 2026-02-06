@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liste des Hôtels</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-4">
+    <h1>Hôtels</h1>
+
+    <!-- Navigation -->
+    <nav class="mb-3">
+        <a th:href="@{/hostels/new}" class="btn btn-primary">+ Nouvel Hôtel</a>
+        <a th:href="@{/reservations}" class="btn btn-outline-secondary ms-2">Voir les Réservations</a>
+    </nav>
+
+    <!-- Tableau des hôtels -->
+    <table class="table table-striped table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Nom</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="h : ${hostels}">
+                <td th:text="${h.id}"></td>
+                <td th:text="${h.nom}"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(hostels)}">
+                <td colspan="2" class="text-center text-muted">Aucun hôtel trouvé.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Section API -->
+    <hr>
+    <h3>API REST disponibles (pour le Front-End)</h3>
+    <table class="table table-bordered">
+        <thead class="table-secondary">
+            <tr>
+                <th>Méthode</th>
+                <th>URL</th>
+                <th>Description</th>
+                <th>Body (POST)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><span class="badge bg-success">GET</span></td>
+                <td><code>/api/hostels</code></td>
+                <td>Liste tous les hôtels</td>
+                <td>—</td>
+            </tr>
+            <tr>
+                <td><span class="badge bg-success">GET</span></td>
+                <td><code>/api/hostels/{id}</code></td>
+                <td>Récupère un hôtel par ID</td>
+                <td>—</td>
+            </tr>
+            <tr>
+                <td><span class="badge bg-warning text-dark">POST</span></td>
+                <td><code>/api/hostels</code></td>
+                <td>Crée un nouvel hôtel</td>
+                <td>
+                    <pre class="mb-0">{
+  "nom": "Hôtel Madagascar"
+}</pre>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
