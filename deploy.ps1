@@ -14,7 +14,30 @@ Write-Host "=========================================" -ForegroundColor Cyan
 # 1. Arreter Tomcat si en cours
 Write-Host "`n[1/5] Arret de Tomcat..." -ForegroundColor Yellow
 & "$TOMCAT_HOME\bin\shutdown.bat" 2>$null
-Start-Sleep -Seconds 5
+
+# Attendre que Tomcat soit completement arrete (max 30s)
+$timeout = 30
+$elapsed = 0
+while ($elapsed -lt $timeout) {
+    $tomcatProc = Get-Process -Name "java" -ErrorAction SilentlyContinue | Where-Object {
+        $_.CommandLine -like "*catalina*" -or $_.CommandLine -like "*tomcat*"
+    }
+    if (-not $tomcatProc) { break }
+    Start-Sleep -Seconds 2
+    $elapsed += 2
+    Write-Host "  Attente de l'arret de Tomcat... ($elapsed s)" -ForegroundColor Gray
+}
+
+# Forcer l'arret si Tomcat tourne encore
+$tomcatProc = Get-Process -Name "java" -ErrorAction SilentlyContinue | Where-Object {
+    $_.CommandLine -like "*catalina*" -or $_.CommandLine -like "*tomcat*"
+}
+if ($tomcatProc) {
+    Write-Host "  Tomcat ne s'arrete pas, arret force..." -ForegroundColor Red
+    $tomcatProc | Stop-Process -Force
+    Start-Sleep -Seconds 3
+}
+Write-Host "Tomcat arrete." -ForegroundColor Green
 
 # 2. Compiler et packager le WAR
 Write-Host "`n[2/5] Compilation du projet..." -ForegroundColor Yellow
