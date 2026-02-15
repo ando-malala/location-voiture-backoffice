@@ -37,6 +37,8 @@ release.properties
 coverage/
 *.tmp
 *.cache
+# configuration
+src/main/resources/application.properties
 
 # BDD / SQL dumps (si vous ne souhaitez pas versionner les dumps)
 # bdd/*.sql
