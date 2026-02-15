@@ -8,8 +8,8 @@ CREATE DATABASE bdd_voiture;
 
 create Table vehicule(
     id serial primary key,
-    cpacite INT NOT NULL,
-    type enum('D', 'E') NOT NULL,
+    capacite INT NOT NULL,
+    type VARCHAR(1) NOT NULL CHECK (type IN ('D','E'))
 );
 
 create table unite(
@@ -19,7 +19,7 @@ create table unite(
 
 create Table parametre(
     id serial primary key,
-    libelle INT NOT NULL,
+    libelle VARCHAR(255) NOT NULL,
     valeur INT NOT NULL,
     idUnite int not null ,
     FOREIGN KEY (idUnite) REFERENCES unite(id)
@@ -52,7 +52,7 @@ create table reservation (
     idHotel INT NOT NULL,
     idClient VARCHAR(255) NOT NULL,
     nbPassager INT NOT NULL,
-    dateHeure DATE NOT NULL, -- arrive des clients à l'aéroport
+    dateHeure TIMESTAMP NOT NULL, -- arrive des clients à l'aéroport
     FOREIGN KEY (idHotel) REFERENCES hotel(id)
 );
 

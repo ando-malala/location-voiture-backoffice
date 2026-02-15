@@ -1,9 +1,14 @@
+-- LIEU
+INSERT INTO lieu(code, nom) VALUES
+('AER', 'Aéroport Ivato'),
+('TANA', 'Antananarivo Centre');
+
 -- HOTEL
-INSERT INTO hotel(nom) VALUES
-('Colbert'),
-('Novotel'),
-('Ibis'),
-('Lokanga');
+INSERT INTO hotel(nom, lieuId) VALUES
+('Colbert', 2),
+('Novotel', 2),
+('Ibis', 2),
+('Lokanga', 2);
 
 -- RESERVATION
 INSERT INTO reservation(idHotel, idClient, nbPassager, dateHeure) VALUES
@@ -18,6 +23,16 @@ INSERT INTO reservation(idHotel, idClient, nbPassager, dateHeure) VALUES
 (1, '6302', 7,  '2026-02-15 13:00'),
 (4, '8640', 1,  '2026-02-18 22:55');
 
+-- VEHICULE
+INSERT INTO vehicule(capacite, type) VALUES
+(4, 'D'),
+(8, 'E'),
+(12, 'D');
+
+-- DISTANCE
+INSERT INTO distance(idLieuDepart, idLieuArrivee, distanceKm) VALUES
+(1, 2, 20.5),
+(2, 1, 20.5);
 
 insert into unite(libelle) values ('km/h'),('minutes');
 
