@@ -12,22 +12,39 @@ create Table vehicule(
     type enum('D', 'E') NOT NULL,
 );
 
+create table unite(
+    id serial PRIMARY key,
+    libelle VARCHAR(55)
+);
+
 create Table parametre(
     id serial primary key,
-    vitesseMoyenne INT NOT NULL,
-    tempsAttente INT NOT NULL
+    libelle INT NOT NULL,
+    valeur INT NOT NULL,
+    idUnite int not null ,
+    FOREIGN KEY (idUnite) REFERENCES unite(id)
+);
+
+create table lieu(
+    id serial primary key,
+    code VARCHAR(20) NOT NULL,
+    nom VARCHAR(100) NOT NULL
 );
 
 create table hotel (
     id serial primary key,
-    nom VARCHAR(100) NOT NULL
+    nom VARCHAR(100) NOT NULL,
+    lieuId INT NOT NULL,
+    FOREIGN KEY (lieuId) REFERENCES lieu(id)
 );
 
-CREATE hotelDistance (
+create Table distance (
     id serial primary key,
-    idHotel INT NOT NULL,
-    distance FLOAT NOT NULL, -- en KM
-    FOREIGN KEY (idHotel) REFERENCES hotel(id)
+    idLieuDepart INT NOT NULL,
+    idLieuArrivee INT NOT NULL,
+    distanceKm FLOAT NOT NULL,
+    FOREIGN KEY (idLieuDepart) REFERENCES lieu(id),
+    FOREIGN KEY (idLieuArrivee) REFERENCES lieu(id)
 );
 
 create table reservation (
@@ -47,3 +64,9 @@ create table ordreDepart (
     FOREIGN KEY (idVehicule) REFERENCES vehicule(id),
     FOREIGN KEY (idReservation) REFERENCES reservation(id)
 );
+
+
+
+
+  ----
+
