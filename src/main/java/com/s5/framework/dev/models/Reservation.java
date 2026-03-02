@@ -9,7 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
@@ -29,13 +29,14 @@ public class Reservation {
     @Column(name = "nbpassager", nullable = false)
     private Integer nbPassager;
 
+    /** Heure d'arrivée des clients à l'aéroport (TIMESTAMP). */
     @Column(name = "dateheure", nullable = false)
-    private LocalDate dateHeure;
+    private LocalDateTime dateHeure;
 
     public Reservation() {
     }
 
-    public Reservation(Long id, Hostel hotel, String idClient, Integer nbPassager, LocalDate dateHeure) {
+    public Reservation(Long id, Hostel hotel, String idClient, Integer nbPassager, LocalDateTime dateHeure) {
         this.id = id;
         this.hotel = hotel;
         this.idClient = idClient;
@@ -75,11 +76,11 @@ public class Reservation {
         this.nbPassager = nbPassager;
     }
 
-    public LocalDate getDateHeure() {
+    public LocalDateTime getDateHeure() {
         return dateHeure;
     }
 
-    public void setDateHeure(LocalDate dateHeure) {
+    public void setDateHeure(LocalDateTime dateHeure) {
         this.dateHeure = dateHeure;
     }
 

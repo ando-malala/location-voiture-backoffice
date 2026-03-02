@@ -12,12 +12,12 @@ create Table vehicule(
     type VARCHAR(1) NOT NULL CHECK (type IN ('D','E'))
 );
 
-create table unite(
+create table unite( -- unité de mesure pour les paramètres
     id serial PRIMARY key,
     libelle VARCHAR(55)
 );
 
-create Table parametre(
+create Table parametre( 
     id serial primary key,
     libelle VARCHAR(255) NOT NULL,
     valeur INT NOT NULL,

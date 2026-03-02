@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -73,7 +74,8 @@ public class ReservationViewController {
         Reservation reservation = new Reservation();
         reservation.setIdClient(idClient);
         reservation.setNbPassager(nbPassager);
-        reservation.setDateHeure(LocalDate.parse(dateHeure));
+        // Formulaire envoie yyyy-MM-dd, on stocke en début de journée
+        reservation.setDateHeure(LocalDate.parse(dateHeure).atStartOfDay());
         reservation.setHotel(hostel);
 
         reservationService.create(reservation);

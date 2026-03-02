@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,10 +32,12 @@ public class ReservationService {
     }
 
     /**
-     * Recherche par date.
+     * Recherche toutes les réservations pour une date donnée (journée entière).
      */
     public List<Reservation> findByDate(LocalDate date) {
-        return reservationRepository.findByDateHeure(date);
+        LocalDateTime start = date.atStartOfDay();
+        LocalDateTime end = date.atTime(LocalTime.MAX);
+        return reservationRepository.findByDateHeureBetween(start, end);
     }
 
     public Reservation create(Reservation reservation) {

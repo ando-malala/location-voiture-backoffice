@@ -22,15 +22,17 @@
             <tr>
                 <th>ID</th>
                 <th>Nom</th>
+                <th>Lieu</th>
             </tr>
         </thead>
         <tbody>
             <tr th:each="h : ${hostels}">
                 <td th:text="${h.id}"></td>
                 <td th:text="${h.nom}"></td>
+                <td th:text="${h.lieu != null ? h.lieu.code + ' - ' + h.lieu.nom : '-'}"></td>
             </tr>
             <tr th:if="${#lists.isEmpty(hostels)}">
-                <td colspan="2" class="text-center text-muted">Aucun hôtel trouvé.</td>
+                <td colspan="3" class="text-center text-muted">Aucun hôtel trouvé.</td>
             </tr>
         </tbody>
     </table>
@@ -66,7 +68,8 @@
                 <td>Crée un nouvel hôtel</td>
                 <td>
                     <pre class="mb-0">{
-  "nom": "Hôtel Madagascar"
+  "nom": "Hôtel Madagascar",
+  "lieu": { "id": 1 }
 }</pre>
                 </td>
             </tr>

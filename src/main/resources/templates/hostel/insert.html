@@ -21,6 +21,17 @@
                    placeholder="Ex: Hôtel Madagascar" required>
         </div>
 
+        <div class="mb-3">
+            <label for="lieuId" class="form-label">Lieu</label>
+            <select class="form-select" id="lieuId" name="lieuId" required>
+                <option value="" disabled selected>-- Choisir un lieu --</option>
+                <option th:each="lieu : ${lieux}"
+                        th:value="${lieu.id}"
+                        th:text="${lieu.code + ' - ' + lieu.nom}">
+                </option>
+            </select>
+        </div>
+
         <button type="submit" class="btn btn-primary">Enregistrer</button>
     </form>
 </div>

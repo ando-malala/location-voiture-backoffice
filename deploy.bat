@@ -20,7 +20,7 @@ timeout /t 5 /nobreak >nul
 REM 2. Compiler et packager le WAR
 echo.
 echo [2/5] Compilation du projet...
-call mvn clean package -DskipTests -q
+call mvnw.cmd clean package -DskipTests -q
 if %ERRORLEVEL% neq 0 (
     echo ERREUR: La compilation a echoue!
     pause
@@ -56,7 +56,9 @@ echo.
 echo URLs disponibles (attendre quelques secondes):
 echo   - http://localhost:8080/reservation/hostels
 echo   - http://localhost:8080/reservation/reservations
+echo   - http://localhost:8080/reservation/api/lieux
 echo   - http://localhost:8080/reservation/api/hostels
 echo   - http://localhost:8080/reservation/api/reservations
+echo   - http://localhost:8080/reservation/api/reservations/date/2026-01-15
 echo.
 pause

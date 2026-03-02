@@ -47,7 +47,7 @@
                 <td th:text="${r.id}"></td>
                 <td th:text="${r.idClient}"></td>
                 <td th:text="${r.nbPassager}"></td>
-                <td th:text="${#temporals.format(r.dateHeure, 'dd/MM/yyyy')}"></td>
+                <td th:text="${#temporals.format(r.dateHeure, 'dd/MM/yyyy HH:mm')}"></td>
                 <td th:text="${r.hotel.nom}"></td>
             </tr>
             <tr th:if="${#lists.isEmpty(reservations)}">
@@ -95,7 +95,7 @@
                     <pre class="mb-0">{
   "idClient": "C001",
   "nbPassager": 3,
-  "dateHeure": "2026-02-10",
+  "dateHeure": "2026-02-10T14:30:00",
   "hotel": { "id": 1 }
 }</pre>
                 </td>
