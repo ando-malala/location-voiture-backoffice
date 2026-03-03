@@ -107,6 +107,7 @@ public class PlanningViewController {
                        @RequestParam(required = false) String heureDepartHotel,
                        @RequestParam String dateHeureRetour,
                        @RequestParam Long reservationId,
+                       @RequestParam(defaultValue = "0") int nbPassagers,
                        @RequestParam(defaultValue = "PLANIFIE") String statut) {
         Vehicule vehicule = vehiculeService.findById(vehiculeId)
                 .orElseThrow(() -> new RuntimeException("Véhicule non trouvé avec l'ID : " + vehiculeId));
@@ -133,6 +134,7 @@ public class PlanningViewController {
         }
         planning.setDateHeureRetour(LocalDateTime.parse(dateHeureRetour));
         planning.setReservation(reservation);
+        planning.setNbPassagers(nbPassagers > 0 ? nbPassagers : reservation.getNbPassager());
         planning.setStatut(statut);
 
         planningService.create(planning);

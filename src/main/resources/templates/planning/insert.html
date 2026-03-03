@@ -83,6 +83,13 @@
             </div>
 
             <div class="form-group">
+                <label for="nbPassagers">Nombre de passagers transportés</label>
+                <input type="number" id="nbPassagers" name="nbPassagers" min="0" value="0"
+                       placeholder="0 = tous les passagers de la réservation">
+                <small style="color:#6b7280; font-size:0.78rem;">Laisser à 0 pour prendre le nombre total de la réservation</small>
+            </div>
+
+            <div class="form-group">
                 <label for="statut">Statut</label>
                 <select id="statut" name="statut" required>
                     <option value="PLANIFIE" selected>Planifié</option>

@@ -60,6 +60,10 @@ public class Planning {
     @JoinColumn(name = "idreservation", nullable = false)
     private Reservation reservation;
 
+    /** Nombre de passagers effectivement transportés dans ce véhicule. */
+    @Column(name = "nbpassagers", nullable = false)
+    private int nbPassagers;
+
     /** Statut du trajet : PLANIFIE, EN_COURS, TERMINE. */
     @Column(name = "statut", nullable = false, length = 30)
     private String statut;
@@ -70,7 +74,7 @@ public class Planning {
     public Planning(Long id, Vehicule vehicule, Hostel hotel, Lieu lieuDepart, Lieu lieuRetour,
                     LocalDateTime dateHeureDepart, LocalDateTime heureArriveeHotel,
                     LocalDateTime heureDepartHotel, LocalDateTime dateHeureRetour,
-                    Reservation reservation, String statut) {
+                    Reservation reservation, int nbPassagers, String statut) {
         this.id = id;
         this.vehicule = vehicule;
         this.hotel = hotel;
@@ -81,6 +85,7 @@ public class Planning {
         this.heureDepartHotel = heureDepartHotel;
         this.dateHeureRetour = dateHeureRetour;
         this.reservation = reservation;
+        this.nbPassagers = nbPassagers;
         this.statut = statut;
     }
 
@@ -114,6 +119,9 @@ public class Planning {
     public Reservation getReservation() { return reservation; }
     public void setReservation(Reservation reservation) { this.reservation = reservation; }
 
+    public int getNbPassagers() { return nbPassagers; }
+    public void setNbPassagers(int nbPassagers) { this.nbPassagers = nbPassagers; }
+
     public String getStatut() { return statut; }
     public void setStatut(String statut) { this.statut = statut; }
 
@@ -132,6 +140,6 @@ public class Planning {
     public String toString() {
         return "Planning{id=" + id + ", vehicule=" + vehicule + ", hotel=" + hotel
                 + ", depart=" + dateHeureDepart + ", retour=" + dateHeureRetour
-                + ", statut='" + statut + "'}";
+                + ", nbPassagers=" + nbPassagers + ", statut='" + statut + "'}";
     }
 }

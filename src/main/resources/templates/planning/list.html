@@ -57,7 +57,7 @@
                         <th>Départ hôtel</th>
                         <th>Date / Heure retour</th>
                         <th>Réservation (Client)</th>
-                        <th>Nb Passagers</th>
+                        <th>Passagers transportés</th>
                         <th>Statut</th>
                     </tr>
                 </thead>
@@ -72,7 +72,11 @@
                         <td th:text="${p.heureDepartHotel != null ? #temporals.format(p.heureDepartHotel, 'dd/MM/yyyy HH:mm') : '—'}"></td>
                         <td th:text="${#temporals.format(p.dateHeureRetour, 'dd/MM/yyyy HH:mm')}"></td>
                         <td th:text="'#' + ${p.reservation.id} + ' - Client ' + ${p.reservation.idClient}"></td>
-                        <td th:text="${p.reservation.nbPassager}"></td>
+                        <td>
+                            <span th:text="${p.nbPassagers}"></span>
+                            <span style="color:#6b7280; font-size:0.78rem;"
+                                  th:text="'/ ' + ${p.reservation.nbPassager} + ' total'"></span>
+                        </td>
                         <td>
                             <span class="badge-type"
                                   th:classappend="${p.statut == 'PLANIFIE'} ? 'badge-planifie' :
