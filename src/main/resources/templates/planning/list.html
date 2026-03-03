@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planning — Back-Office</title>
+    <th:block th:replace="~{fragments/sidebar :: sidebarStyles}"></th:block>
+</head>
+<body>
+
+<th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+
+<main class="main-content">
+    <div class="page-title">🗓️ Planning des trajets</div>
+    <div class="page-subtitle">Liste des plannings de trajets véhicules (aéroport ↔ hôtel)</div>
+
+    <div class="content-card">
+        <!-- Barre d'actions + filtre par date -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
+            <form method="get" th:action="@{/plannings}" style="display:flex; align-items:center; gap:8px;">
+                <label for="date" style="font-size:0.85rem; font-weight:600; color:#374151; white-space:nowrap;">Filtrer par date :</label>
+                <input type="date" id="date" name="date" th:value="${filterDate}"
+                       style="padding:7px 10px; border:1px solid #d1d5db; border-radius:8px; font-size:0.85rem; outline:none;">
+                <button type="submit" class="btn-action btn-primary-action">🔍 Rechercher</button>
+                <a th:href="@{/plannings}" class="btn-action btn-secondary-action">✕ Effacer</a>
+            </form>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <span style="font-weight:600; color:#374151;">
+                    Total : <span th:text="${#lists.size(plannings)}">0</span> trajet(s)
+                </span>
+                <a th:href="@{/plannings/new}" class="btn-action btn-primary-action">+ Nouveau planning</a>
+            </div>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Véhicule (capacité)</th>
+                    <th>Hôtel destination</th>
+                    <th>Lieu départ</th>
+                    <th>Lieu retour</th>
+                    <th>Date / Heure départ</th>
+                    <th>Arrivée hôtel</th>
+                    <th>Départ hôtel</th>
+                    <th>Date / Heure retour</th>
+                    <th>Réservation (Client)</th>
+                    <th>Nb Passagers</th>
+                    <th>Statut</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="p : ${plannings}">
+                    <td th:text="${p.id}"></td>
+                    <td>
+                        <span th:text="'Véhicule #' + ${p.vehicule.id}"></span>
+                        <span style="color:#6b7280; font-size:0.8rem;"
+                              th:text="'(' + ${p.vehicule.capacite} + ' places)'"></span>
+                    </td>
+                    <td th:text="${p.hotel.nom}"></td>
+                    <td th:text="${p.lieuDepart.code + ' - ' + p.lieuDepart.nom}"></td>
+                    <td th:text="${p.lieuRetour.code + ' - ' + p.lieuRetour.nom}"></td>
+                    <td th:text="${#temporals.format(p.dateHeureDepart, 'dd/MM/yyyy HH:mm')}"></td>
+                    <td th:text="${p.heureArriveeHotel != null ? #temporals.format(p.heureArriveeHotel, 'dd/MM/yyyy HH:mm') : '—'}"></td>
+                    <td th:text="${p.heureDepartHotel != null ? #temporals.format(p.heureDepartHotel, 'dd/MM/yyyy HH:mm') : '—'}"></td>
+                    <td th:text="${#temporals.format(p.dateHeureRetour, 'dd/MM/yyyy HH:mm')}"></td>
+                    <td th:text="'#' + ${p.reservation.id} + ' - Client ' + ${p.reservation.idClient}"></td>
+                    <td th:text="${p.reservation.nbPassager}"></td>
+                    <td>
+                        <span class="badge-type"
+                              th:classappend="${p.statut == 'PLANIFIE'} ? 'badge-planifie' :
+                                              (${p.statut == 'EN_COURS'} ? 'badge-encours' : 'badge-termine')"
+                              th:text="${p.statut}"></span>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(plannings)}">
+                    <td colspan="12" style="text-align:center; color:#9ca3af; padding:32px;">Aucun planning trouvé.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<style>
+    .badge-planifie { background: #dbeafe; color: #1d4ed8; }
+    .badge-encours  { background: #fef3c7; color: #92400e; }
+    .badge-termine  { background: #d1fae5; color: #065f46; }
+</style>
+
+</body>
+</html>

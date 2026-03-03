@@ -47,6 +47,14 @@
             </a>
         </li>
 
+        <li>
+            <a th:href="@{/plannings}"
+               th:class="${activePage == 'plannings'} ? 'active' : ''">
+                <span class="menu-icon">🗓️</span>
+                <span>Planning</span>
+            </a>
+        </li>
+
         <li class="menu-section-title mt-3">API REST</li>
 
         <li>
@@ -71,6 +79,12 @@
             <a th:href="@{/api/typecarburants}" target="_blank">
                 <span class="menu-icon">🔗</span>
                 <span>/api/typecarburants</span>
+            </a>
+        </li>
+        <li>
+            <a th:href="@{/api/plannings}" target="_blank">
+                <span class="menu-icon">🔗</span>
+                <span>/api/plannings</span>
             </a>
         </li>
     </ul>

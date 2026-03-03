@@ -4,7 +4,7 @@ REM =========================================
 
 set JAVA_HOME=C:\Program Files\Java\jdk-17
 set PATH=%JAVA_HOME%\bin;%PATH%
-set TOMCAT_HOME=C:\apache-tomcat-10.1.49
+set TOMCAT_HOME=C:\xampp\tomcat
 set WAR_NAME=reservation.war
 
 echo =========================================
