@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<body>
+
+<!-- ===== SIDEBAR FRAGMENT ===== -->
+<nav th:fragment="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-logo">
+            <span class="logo-icon">🚗</span>
+            <span class="logo-text">Back-Office</span>
+        </div>
+        <div class="sidebar-subtitle">Location Voiture Aéroport</div>
+    </div>
+
+    <ul class="sidebar-menu">
+        <li class="menu-section-title">Navigation</li>
+
+        <li>
+            <a th:href="@{/}"
+               th:class="${activePage == 'dashboard'} ? 'active' : ''">
+                <span class="menu-icon">🏠</span>
+                <span>Tableau de bord</span>
+            </a>
+        </li>
+
+        <li>
+            <a th:href="@{/reservations}"
+               th:class="${activePage == 'reservations'} ? 'active' : ''">
+                <span class="menu-icon">📋</span>
+                <span>Réservations</span>
+            </a>
+        </li>
+
+        <li>
+            <a th:href="@{/hostels}"
+               th:class="${activePage == 'hostels'} ? 'active' : ''">
+                <span class="menu-icon">🏨</span>
+                <span>Hôtels</span>
+            </a>
+        </li>
+
+        <li>
+            <a th:href="@{/vehicules}"
+               th:class="${activePage == 'vehicules'} ? 'active' : ''">
+                <span class="menu-icon">🚐</span>
+                <span>Véhicules</span>
+            </a>
+        </li>
+
+        <li class="menu-section-title mt-3">API REST</li>
+
+        <li>
+            <a th:href="@{/api/reservations}" target="_blank">
+                <span class="menu-icon">🔗</span>
+                <span>/api/reservations</span>
+            </a>
+        </li>
+        <li>
+            <a th:href="@{/api/hostels}" target="_blank">
+                <span class="menu-icon">🔗</span>
+                <span>/api/hostels</span>
+            </a>
+        </li>
+        <li>
+            <a th:href="@{/api/vehicules}" target="_blank">
+                <span class="menu-icon">🔗</span>
+                <span>/api/vehicules</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+
+<!-- ===== SIDEBAR CSS (inclus une seule fois via ce fragment) ===== -->
+<th:block th:fragment="sidebarStyles">
+<style>
+    :root {
+        --sidebar-width: 260px;
+        --sidebar-bg: #1e2a38;
+        --sidebar-hover: #2d3e50;
+        --sidebar-active: #3b82f6;
+        --sidebar-text: #c9d4e0;
+        --sidebar-text-hover: #ffffff;
+        --header-height: 0px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        display: flex;
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f0f4f8;
+    }
+
+    #sidebar {
+        width: var(--sidebar-width);
+        min-height: 100vh;
+        background: var(--sidebar-bg);
+        color: var(--sidebar-text);
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        top: 0; left: 0;
+        overflow-y: auto;
+        z-index: 100;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+    }
+
+    .sidebar-header {
+        padding: 24px 20px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .sidebar-logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 4px;
+    }
+
+    .logo-icon { font-size: 1.6rem; }
+
+    .logo-text {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #ffffff;
+        letter-spacing: 0.5px;
+    }
+
+    .sidebar-subtitle {
+        font-size: 0.72rem;
+        color: #7a92a8;
+        padding-left: 40px;
+    }
+
+    .sidebar-menu {
+        list-style: none;
+        padding: 12px 0;
+        flex: 1;
+    }
+
+    .sidebar-menu li a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 20px;
+        color: var(--sidebar-text);
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: background 0.2s, color 0.2s;
+        border-left: 3px solid transparent;
+    }
+
+    .sidebar-menu li a:hover {
+        background: var(--sidebar-hover);
+        color: var(--sidebar-text-hover);
+    }
+
+    .sidebar-menu li a.active {
+        background: rgba(59,130,246,0.15);
+        color: #93c5fd;
+        border-left: 3px solid var(--sidebar-active);
+        font-weight: 600;
+    }
+
+    .menu-icon { font-size: 1rem; width: 20px; text-align: center; }
+
+    .menu-section-title {
+        padding: 10px 20px 4px;
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        color: #4d6070;
+        font-weight: 600;
+    }
+
+    .mt-3 { margin-top: 8px; }
+
+    /* ---- MAIN CONTENT ---- */
+    .main-content {
+        margin-left: var(--sidebar-width);
+        flex: 1;
+        padding: 32px 36px;
+        min-height: 100vh;
+    }
+
+    .page-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #1e2a38;
+        margin-bottom: 6px;
+    }
+
+    .page-subtitle {
+        color: #6b7e90;
+        font-size: 0.88rem;
+        margin-bottom: 24px;
+    }
+
+    .content-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+
+    .btn-action:hover { opacity: 0.87; }
+
+    .btn-primary-action  { background: #3b82f6; color: #fff; }
+    .btn-warning-action  { background: #f59e0b; color: #fff; }
+    .btn-danger-action   { background: #ef4444; color: #fff; }
+    .btn-secondary-action { background: #e5e7eb; color: #374151; }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.88rem;
+    }
+
+    .data-table thead th {
+        background: #f8fafc;
+        color: #4b5563;
+        font-weight: 600;
+        padding: 12px 14px;
+        border-bottom: 2px solid #e5e7eb;
+        text-align: left;
+    }
+
+    .data-table tbody tr {
+        border-bottom: 1px solid #f1f5f9;
+        transition: background 0.15s;
+    }
+
+    .data-table tbody tr:hover { background: #f8fafc; }
+
+    .data-table tbody td {
+        padding: 11px 14px;
+        color: #374151;
+    }
+
+    .badge-type {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.78rem;
+        font-weight: 600;
+    }
+
+    .badge-diesel   { background: #fef3c7; color: #92400e; }
+    .badge-electric { background: #d1fae5; color: #065f46; }
+
+    .form-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+        padding: 28px;
+        max-width: 520px;
+    }
+
+    .form-group { margin-bottom: 18px; }
+
+    .form-group label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        color: #1f2937;
+        transition: border-color 0.2s;
+        outline: none;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus { border-color: #3b82f6; }
+
+    .alert-error {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        font-size: 0.88rem;
+    }
+</style>
+</th:block>
+
+</body>
+</html>

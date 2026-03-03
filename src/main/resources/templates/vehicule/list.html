@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Véhicules — Back-Office</title>
+    <th:block th:replace="~{fragments/sidebar :: sidebarStyles}"></th:block>
+</head>
+<body>
+
+<th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+
+<main class="main-content">
+    <div class="page-title">🚐 Véhicules</div>
+    <div class="page-subtitle">Gestion du parc de véhicules (navettes aéroport)</div>
+
+    <div th:if="${error}" class="alert-error" th:text="${error}"></div>
+
+    <div class="content-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <span style="font-weight:600; color:#374151;">Liste des véhicules (<span th:text="${#lists.size(vehicules)}">0</span>)</span>
+            <a th:href="@{/vehicules/new}" class="btn-action btn-primary-action">+ Nouveau véhicule</a>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Capacité (pers.)</th>
+                    <th>Type</th>
+                    <th style="text-align:center;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="v : ${vehicules}">
+                    <td th:text="${v.id}"></td>
+                    <td th:text="${v.capacite}"></td>
+                    <td>
+                        <span th:if="${v.type == 'D'}" class="badge-type badge-diesel">Diesel</span>
+                        <span th:if="${v.type == 'E'}" class="badge-type badge-electric">Essence</span>
+                        <span th:if="${v.type != 'D' and v.type != 'E'}" class="badge-type" th:text="${v.type}"></span>
+                    </td>
+                    <td style="text-align:center; display:flex; gap:8px; justify-content:center;">
+                        <a th:href="@{/vehicules/edit/{id}(id=${v.id})}" class="btn-action btn-warning-action">✏️ Modifier</a>
+                        <form th:action="@{/vehicules/delete/{id}(id=${v.id})}" method="post"
+                              onsubmit="return confirm('Supprimer ce véhicule ?')">
+                            <button type="submit" class="btn-action btn-danger-action">🗑️ Supprimer</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(vehicules)}">
+                    <td colspan="4" style="text-align:center; color:#9ca3af; padding:32px;">Aucun véhicule enregistré.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+</body>
+</html>

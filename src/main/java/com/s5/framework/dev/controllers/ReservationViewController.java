@@ -1,9 +1,8 @@
 package com.s5.framework.dev.controllers;
 
-import com.s5.framework.dev.models.Hostel;
-import com.s5.framework.dev.models.Reservation;
-import com.s5.framework.dev.services.HostelService;
-import com.s5.framework.dev.services.ReservationService;
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,9 +11,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
+import com.s5.framework.dev.models.Hostel;
+import com.s5.framework.dev.models.Reservation;
+import com.s5.framework.dev.services.HostelService;
+import com.s5.framework.dev.services.ReservationService;
 
 /**
  * Contrôleur Spring MVC pour les pages Thymeleaf des Réservations.
@@ -46,6 +46,7 @@ public class ReservationViewController {
             reservations = reservationService.findAll();
         }
         model.addAttribute("reservations", reservations);
+        model.addAttribute("activePage", "reservations");
         return "reservation/list";
     }
 
@@ -57,6 +58,7 @@ public class ReservationViewController {
         List<Hostel> hostels = hostelService.findAll();
         model.addAttribute("hostels", hostels);
         model.addAttribute("reservation", new Reservation());
+        model.addAttribute("activePage", "reservations");
         return "reservation/insert";
     }
 

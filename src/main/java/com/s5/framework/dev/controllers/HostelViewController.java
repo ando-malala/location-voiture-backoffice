@@ -1,9 +1,7 @@
 package com.s5.framework.dev.controllers;
 
-import com.s5.framework.dev.models.Hostel;
-import com.s5.framework.dev.models.Lieu;
-import com.s5.framework.dev.services.HostelService;
-import com.s5.framework.dev.services.LieuService;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,7 +10,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.List;
+import com.s5.framework.dev.models.Hostel;
+import com.s5.framework.dev.models.Lieu;
+import com.s5.framework.dev.services.HostelService;
+import com.s5.framework.dev.services.LieuService;
 
 /**
  * Contrôleur Spring MVC pour les pages Thymeleaf des Hôtels.
@@ -37,6 +38,7 @@ public class HostelViewController {
     public String list(Model model) {
         List<Hostel> hostels = hostelService.findAll();
         model.addAttribute("hostels", hostels);
+        model.addAttribute("activePage", "hostels");
         return "hostel/list";
     }
 
@@ -47,6 +49,7 @@ public class HostelViewController {
     public String insertForm(Model model) {
         model.addAttribute("hostel", new Hostel());
         model.addAttribute("lieux", lieuService.findAll());
+        model.addAttribute("activePage", "hostels");
         return "hostel/insert";
     }
 
