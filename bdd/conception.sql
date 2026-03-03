@@ -6,10 +6,16 @@ CREATE DATABASE bdd_voiture;
 
 -- LE BUT C'EST D'AVOIR L'ORDRE DE DEPART DES VEHICULES DE L'AEROPORT VERS LES HOTELS
 
+CREATE TABLE typeCarburant (
+    id serial primary key,
+    libelle VARCHAR(50) NOT NULL
+);
+
 create Table vehicule(
     id serial primary key,
     capacite INT NOT NULL,
-    type VARCHAR(1) NOT NULL CHECK (type IN ('D','E'))
+    typeCarburantId INT NOT NULL,
+    FOREIGN KEY (typeCarburantId) REFERENCES typeCarburant(id)
 );
 
 create table unite( -- unité de mesure pour les paramètres

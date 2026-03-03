@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.s5.framework.dev.models.TypeCarburant;
 import com.s5.framework.dev.models.Vehicule;
+import com.s5.framework.dev.services.TypeCarburantService;
 import com.s5.framework.dev.services.VehiculeService;
 
 /**
@@ -22,10 +24,12 @@ import com.s5.framework.dev.services.VehiculeService;
 public class VehiculeViewController {
 
     private final VehiculeService vehiculeService;
+    private final TypeCarburantService typeCarburantService;
 
     @Autowired
-    public VehiculeViewController(VehiculeService vehiculeService) {
+    public VehiculeViewController(VehiculeService vehiculeService, TypeCarburantService typeCarburantService) {
         this.vehiculeService = vehiculeService;
+        this.typeCarburantService = typeCarburantService;
     }
 
     /** GET /vehicules -> Liste */
@@ -41,6 +45,7 @@ public class VehiculeViewController {
     @GetMapping("/new")
     public String insertForm(Model model) {
         model.addAttribute("vehicule", new Vehicule());
+        model.addAttribute("typesCarburant", typeCarburantService.findAll());
         model.addAttribute("activePage", "vehicules");
         return "vehicule/insert";
     }
@@ -48,10 +53,12 @@ public class VehiculeViewController {
     /** POST /vehicules/save -> Enregistre un nouveau véhicule */
     @PostMapping("/save")
     public String save(@RequestParam Integer capacite,
-                       @RequestParam String type) {
+                       @RequestParam Long typeCarburantId) {
+        TypeCarburant tc = typeCarburantService.findById(typeCarburantId)
+                .orElseThrow(() -> new RuntimeException("Type de carburant non trouvé : " + typeCarburantId));
         Vehicule v = new Vehicule();
         v.setCapacite(capacite);
-        v.setType(type);
+        v.setTypeCarburant(tc);
         vehiculeService.create(v);
         return "redirect:/vehicules";
     }
@@ -62,6 +69,7 @@ public class VehiculeViewController {
         Vehicule v = vehiculeService.findById(id)
                 .orElseThrow(() -> new RuntimeException("Véhicule non trouvé : " + id));
         model.addAttribute("vehicule", v);
+        model.addAttribute("typesCarburant", typeCarburantService.findAll());
         model.addAttribute("activePage", "vehicules");
         return "vehicule/edit";
     }
@@ -70,11 +78,13 @@ public class VehiculeViewController {
     @PostMapping("/update")
     public String update(@RequestParam Long id,
                          @RequestParam Integer capacite,
-                         @RequestParam String type) {
+                         @RequestParam Long typeCarburantId) {
+        TypeCarburant tc = typeCarburantService.findById(typeCarburantId)
+                .orElseThrow(() -> new RuntimeException("Type de carburant non trouvé : " + typeCarburantId));
         Vehicule v = vehiculeService.findById(id)
                 .orElseThrow(() -> new RuntimeException("Véhicule non trouvé : " + id));
         v.setCapacite(capacite);
-        v.setType(type);
+        v.setTypeCarburant(tc);
         vehiculeService.update(v);
         return "redirect:/vehicules";
     }

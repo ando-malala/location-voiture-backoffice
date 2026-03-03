@@ -25,10 +25,13 @@
             </div>
 
             <div class="form-group">
-                <label for="type">Type de motorisation</label>
-                <select id="type" name="type" required>
-                    <option value="D" th:selected="${vehicule.type == 'D'}">Diesel</option>
-                    <option value="E" th:selected="${vehicule.type == 'E'}">Essence</option>
+                <label for="typeCarburantId">Type de carburant</label>
+                <select id="typeCarburantId" name="typeCarburantId" required>
+                    <option th:each="tc : ${typesCarburant}"
+                            th:value="${tc.id}"
+                            th:text="${tc.libelle}"
+                            th:selected="${vehicule.typeCarburant != null and vehicule.typeCarburant.id == tc.id}">
+                    </option>
                 </select>
             </div>
 

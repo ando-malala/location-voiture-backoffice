@@ -27,7 +27,7 @@
                 <tr>
                     <th>ID</th>
                     <th>Capacité (pers.)</th>
-                    <th>Type</th>
+                    <th>Type de carburant</th>
                     <th style="text-align:center;">Actions</th>
                 </tr>
             </thead>
@@ -35,11 +35,7 @@
                 <tr th:each="v : ${vehicules}">
                     <td th:text="${v.id}"></td>
                     <td th:text="${v.capacite}"></td>
-                    <td>
-                        <span th:if="${v.type == 'D'}" class="badge-type badge-diesel">Diesel</span>
-                        <span th:if="${v.type == 'E'}" class="badge-type badge-electric">Essence</span>
-                        <span th:if="${v.type != 'D' and v.type != 'E'}" class="badge-type" th:text="${v.type}"></span>
-                    </td>
+                    <td th:text="${v.typeCarburant != null ? v.typeCarburant.libelle : '-'}"></td>
                     <td style="text-align:center; display:flex; gap:8px; justify-content:center;">
                         <a th:href="@{/vehicules/edit/{id}(id=${v.id})}" class="btn-action btn-warning-action">✏️ Modifier</a>
                         <form th:action="@{/vehicules/delete/{id}(id=${v.id})}" method="post"

@@ -23,11 +23,13 @@
             </div>
 
             <div class="form-group">
-                <label for="type">Type de motorisation</label>
-                <select id="type" name="type" required>
+                <label for="typeCarburantId">Type de carburant</label>
+                <select id="typeCarburantId" name="typeCarburantId" required>
                     <option value="" disabled selected>-- Choisir --</option>
-                    <option value="D">Diesel</option>
-                    <option value="E">Essence</option>
+                    <option th:each="tc : ${typesCarburant}"
+                            th:value="${tc.id}"
+                            th:text="${tc.libelle}">
+                    </option>
                 </select>
             </div>
 

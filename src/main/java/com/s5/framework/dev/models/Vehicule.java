@@ -1,16 +1,19 @@
 package com.s5.framework.dev.models;
 
+import java.util.Objects;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.util.Objects;
 
 /**
- * Représente un véhicule (Diesel ou Electrique) utilisé pour les navettes aéroport → hôtel.
- * type : 'D' = Diesel, 'E' = Electrique
+ * Représente un véhicule utilisé pour les navettes aéroport → hôtel.
  */
 @Entity
 @Table(name = "vehicule")
@@ -23,17 +26,16 @@ public class Vehicule {
     @Column(name = "capacite", nullable = false)
     private Integer capacite;
 
-    /** 'D' = Diesel, 'E' = Electrique */
-    @Column(name = "type", nullable = false, length = 1)
-    private String type;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "typecarburantid", nullable = false)
+    private TypeCarburant typeCarburant;
 
-    public Vehicule() {
-    }
+    public Vehicule() {}
 
-    public Vehicule(Long id, Integer capacite, String type) {
+    public Vehicule(Long id, Integer capacite, TypeCarburant typeCarburant) {
         this.id = id;
         this.capacite = capacite;
-        this.type = type;
+        this.typeCarburant = typeCarburant;
     }
 
     public Long getId() { return id; }
@@ -42,8 +44,8 @@ public class Vehicule {
     public Integer getCapacite() { return capacite; }
     public void setCapacite(Integer capacite) { this.capacite = capacite; }
 
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
+    public TypeCarburant getTypeCarburant() { return typeCarburant; }
+    public void setTypeCarburant(TypeCarburant typeCarburant) { this.typeCarburant = typeCarburant; }
 
     @Override
     public boolean equals(Object o) {
@@ -58,6 +60,7 @@ public class Vehicule {
 
     @Override
     public String toString() {
-        return "Vehicule{id=" + id + ", capacite=" + capacite + ", type='" + type + "'}";
+        return "Vehicule{id=" + id + ", capacite=" + capacite + ", typeCarburant=" + typeCarburant + "}";
     }
 }
+
