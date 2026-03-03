@@ -2,7 +2,10 @@ package com.s5.framework.dev.controllers;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -60,7 +63,15 @@ public class PlanningViewController {
         } else {
             plannings = planningService.findAll();
         }
-        model.addAttribute("plannings", plannings);
+        // Regrouper par véhicule (LinkedHashMap pour garder l'ordre)
+        Map<String, List<Planning>> planningsParVehicule = plannings.stream()
+                .collect(Collectors.groupingBy(
+                        p -> "Véhicule #" + p.getVehicule().getId() + " (" + p.getVehicule().getCapacite() + " places)",
+                        LinkedHashMap::new,
+                        Collectors.toList()));
+
+        model.addAttribute("planningsParVehicule", planningsParVehicule);
+        model.addAttribute("totalPlannings", plannings.size());
         model.addAttribute("activePage", "plannings");
         return "planning/list";
     }
