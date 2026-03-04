@@ -13,6 +13,7 @@ CREATE TABLE typeCarburant (
 
 create Table vehicule(
     id serial primary key,
+    reference VARCHAR(50) NOT NULL,
     capacite INT NOT NULL,
     typeCarburantId INT NOT NULL,
     FOREIGN KEY (typeCarburantId) REFERENCES typeCarburant(id)
@@ -62,15 +63,7 @@ create table reservation (
     FOREIGN KEY (idHotel) REFERENCES hotel(id)
 );
 
-create table ordreDepart (
-    id serial primary key,
-    idVehicule INT NOT NULL,
-    idReservation INT NOT NULL,
-    heureDepart TIME NOT NULL, -- heure de départ du véhicule de l'aéroport
-    FOREIGN KEY (idVehicule) REFERENCES vehicule(id),
-    FOREIGN KEY (idReservation) REFERENCES reservation(id)
-);
-
+-- La planification est calculée dynamiquement (simulation), pas stockée en base.
 
 
 

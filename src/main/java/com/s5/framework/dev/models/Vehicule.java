@@ -23,6 +23,9 @@ public class Vehicule {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "reference", nullable = false, length = 50)
+    private String reference;
+
     @Column(name = "capacite", nullable = false)
     private Integer capacite;
 
@@ -32,14 +35,18 @@ public class Vehicule {
 
     public Vehicule() {}
 
-    public Vehicule(Long id, Integer capacite, TypeCarburant typeCarburant) {
+    public Vehicule(Long id, String reference, Integer capacite, TypeCarburant typeCarburant) {
         this.id = id;
+        this.reference = reference;
         this.capacite = capacite;
         this.typeCarburant = typeCarburant;
     }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
+    public String getReference() { return reference; }
+    public void setReference(String reference) { this.reference = reference; }
 
     public Integer getCapacite() { return capacite; }
     public void setCapacite(Integer capacite) { this.capacite = capacite; }

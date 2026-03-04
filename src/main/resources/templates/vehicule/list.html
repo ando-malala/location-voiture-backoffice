@@ -26,6 +26,7 @@
             <thead>
                 <tr>
                     <th>ID</th>
+                    <th>Référence</th>
                     <th>Capacité (pers.)</th>
                     <th>Type de carburant</th>
                     <th style="text-align:center;">Actions</th>
@@ -34,6 +35,7 @@
             <tbody>
                 <tr th:each="v : ${vehicules}">
                     <td th:text="${v.id}"></td>
+                    <td th:text="${v.reference}"></td>
                     <td th:text="${v.capacite}"></td>
                     <td th:text="${v.typeCarburant != null ? v.typeCarburant.libelle : '-'}"></td>
                     <td style="text-align:center; display:flex; gap:8px; justify-content:center;">
@@ -45,7 +47,7 @@
                     </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(vehicules)}">
-                    <td colspan="4" style="text-align:center; color:#9ca3af; padding:32px;">Aucun véhicule enregistré.</td>
+                    <td colspan="5" style="text-align:center; color:#9ca3af; padding:32px;">Aucun véhicule enregistré.</td>
                 </tr>
             </tbody>
         </table>

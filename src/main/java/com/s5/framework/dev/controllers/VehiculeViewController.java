@@ -52,11 +52,13 @@ public class VehiculeViewController {
 
     /** POST /vehicules/save -> Enregistre un nouveau véhicule */
     @PostMapping("/save")
-    public String save(@RequestParam Integer capacite,
+    public String save(@RequestParam String reference,
+                       @RequestParam Integer capacite,
                        @RequestParam Long typeCarburantId) {
         TypeCarburant tc = typeCarburantService.findById(typeCarburantId)
                 .orElseThrow(() -> new RuntimeException("Type de carburant non trouvé : " + typeCarburantId));
         Vehicule v = new Vehicule();
+        v.setReference(reference);
         v.setCapacite(capacite);
         v.setTypeCarburant(tc);
         vehiculeService.create(v);
@@ -77,12 +79,14 @@ public class VehiculeViewController {
     /** POST /vehicules/update -> Met à jour un véhicule */
     @PostMapping("/update")
     public String update(@RequestParam Long id,
+                         @RequestParam String reference,
                          @RequestParam Integer capacite,
                          @RequestParam Long typeCarburantId) {
         TypeCarburant tc = typeCarburantService.findById(typeCarburantId)
                 .orElseThrow(() -> new RuntimeException("Type de carburant non trouvé : " + typeCarburantId));
         Vehicule v = vehiculeService.findById(id)
                 .orElseThrow(() -> new RuntimeException("Véhicule non trouvé : " + id));
+        v.setReference(reference);
         v.setCapacite(capacite);
         v.setTypeCarburant(tc);
         vehiculeService.update(v);

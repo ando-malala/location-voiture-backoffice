@@ -26,12 +26,12 @@ INSERT INTO reservation(idHotel, idClient, nbPassager, dateHeure) VALUES
 
 insert into typeCarburant(libelle) values ('Diesel'),('Essence'),('Electrique'),('Hybride');
 -- VEHICULE
-INSERT INTO vehicule(capacite,typeCarburantId) VALUES
-(4, 1),
-(8, 2),
-(12, 1),
-(5, 3),
-(7, 4);
+INSERT INTO vehicule(reference,capacite,typeCarburantId) VALUES
+('REF-101', 4, 1),
+('REF-102', 8, 2),
+('REF-103', 12, 1),
+('REF-104', 5, 3),
+('REF-105', 7, 4);
 
 -- DISTANCE
 INSERT INTO distance(idLieuDepart, idLieuArrivee, distanceKm) VALUES

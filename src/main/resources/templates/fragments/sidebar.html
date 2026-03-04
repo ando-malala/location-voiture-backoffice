@@ -48,10 +48,10 @@
         </li>
 
         <li>
-            <a th:href="@{/plannings}"
-               th:class="${activePage == 'plannings'} ? 'active' : ''">
+            <a th:href="@{/planification}"
+               th:class="${activePage == 'planification'} ? 'active' : ''">
                 <span class="menu-icon">🗓️</span>
-                <span>Planning</span>
+                <span>Planification</span>
             </a>
         </li>
 
@@ -79,12 +79,6 @@
             <a th:href="@{/api/typecarburants}" target="_blank">
                 <span class="menu-icon">🔗</span>
                 <span>/api/typecarburants</span>
-            </a>
-        </li>
-        <li>
-            <a th:href="@{/api/plannings}" target="_blank">
-                <span class="menu-icon">🔗</span>
-                <span>/api/plannings</span>
             </a>
         </li>
     </ul>

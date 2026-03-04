@@ -1,226 +1,163 @@
 package com.s5.framework.dev.services;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import com.s5.framework.dev.models.Hostel;
 import com.s5.framework.dev.models.Lieu;
 import com.s5.framework.dev.models.Planning;
 import com.s5.framework.dev.models.Reservation;
 import com.s5.framework.dev.models.Vehicule;
 import com.s5.framework.dev.repositories.LieuRepository;
-import com.s5.framework.dev.repositories.PlanningRepository;
 import com.s5.framework.dev.repositories.VehiculeRepository;
 
 /**
- * Service d'assignation automatique de véhicule(s) à une réservation.
+ * Service de simulation de planification.
  *
- * Logique :
- * 1. Sélection du véhicule : capacité >= nbPassager, plus petite capacité restante,
- *    puis priorité au Diesel en cas d'égalité, disponible sur le créneau.
- *    Si aucun véhicule seul ne suffit → répartition sur plusieurs véhicules.
- * 2. Calcul des horaires :
- *    - Départ = dateHeureDepart choisie par l'utilisateur
- *    - Arrivée hôtel = départ + (distance aéroport→hôtel / vitesse moyenne)
- *    - Départ hôtel = arrivée hôtel + temps d'attente
- *    - Retour aéroport = départ hôtel + (distance hôtel→aéroport / vitesse moyenne)
- * 3. Une réservation peut avoir plusieurs assignations (plannings).
+ * Logique d'assignation (par réservation, triées par heure croissante) :
+ *  1. Ne considérer que les véhicules non encore utilisés dans la simulation.
+ *  2. Parmi eux, garder ceux dont capacite >= nbPassager.
+ *  3. Choisir celui avec la plus petite capacité (closest fitting).
+ *  4. À égalité de capacité : priorité au Diesel.
+ *  5. À égalité de capacité ET typeCarburant : choix aléatoire.
+ *  6. Aucun véhicule trouvé → réservation non assignée.
+ *
+ * Aucune donnée n'est écrite en base.
  */
 @Service
-@Transactional
 public class AssignmentService {
 
     private final VehiculeRepository vehiculeRepository;
-    private final PlanningRepository planningRepository;
     private final LieuRepository lieuRepository;
     private final DistanceService distanceService;
     private final ParametreService parametreService;
+    private final ReservationService reservationService;
 
     @Autowired
     public AssignmentService(VehiculeRepository vehiculeRepository,
-                             PlanningRepository planningRepository,
                              LieuRepository lieuRepository,
                              DistanceService distanceService,
-                             ParametreService parametreService) {
+                             ParametreService parametreService,
+                             ReservationService reservationService) {
         this.vehiculeRepository = vehiculeRepository;
-        this.planningRepository = planningRepository;
         this.lieuRepository = lieuRepository;
         this.distanceService = distanceService;
         this.parametreService = parametreService;
+        this.reservationService = reservationService;
     }
 
     /**
-     * Assigne automatiquement un ou plusieurs véhicules et crée les plannings.
-     * Si le nombre de passagers dépasse la capacité du plus grand véhicule disponible,
-     * la réservation est répartie sur plusieurs véhicules.
-     * Une réservation peut être assignée plusieurs fois (plusieurs départs).
-     *
-     * @param reservation     la réservation à assigner
-     * @param dateHeureDepart la date/heure de départ souhaitée depuis l'aéroport
-     * @return la liste des Plannings créés
+     * Résultat de la simulation pour une date donnée.
      */
-    public List<Planning> assignerAutomatiquement(Reservation reservation, LocalDateTime dateHeureDepart) {
-        int nbPassagers = reservation.getNbPassager();
-        Hostel hotel = reservation.getHotel();
+    public static class SimulationResult {
+        public final List<Planning> assigned;
+        public final List<Long> unassignedIds;
 
-        // Récupérer le lieu Aéroport (code = 'AER')
-        Lieu aeroport = lieuRepository.findByCode("AER")
-                .orElseThrow(() -> new RuntimeException("Lieu 'AER' (Aéroport) non trouvé en base."));
-
-        Lieu lieuHotel = hotel.getLieu();
-
-        // --- Calcul des horaires ---
-        int vitesseMoyenne = parametreService.getVitesseMoyenne();      // km/h
-        int tempsAttente = parametreService.getTempsAttente();            // minutes
-
-        // Distance aller : aéroport → lieu de l'hôtel
-        double distanceAller = distanceService.getDistanceKm(aeroport.getId(), lieuHotel.getId());
-        long tempsTrajetAllerMinutes = Math.round((distanceAller / vitesseMoyenne) * 60);
-
-        // Distance retour : lieu de l'hôtel → aéroport
-        double distanceRetour = distanceService.getDistanceKm(lieuHotel.getId(), aeroport.getId());
-        long tempsTrajetRetourMinutes = Math.round((distanceRetour / vitesseMoyenne) * 60);
-
-        LocalDateTime heureArriveeHotel = dateHeureDepart.plusMinutes(tempsTrajetAllerMinutes);
-        LocalDateTime heureDepartHotel = heureArriveeHotel.plusMinutes(tempsAttente);
-        LocalDateTime dateHeureRetour = heureDepartHotel.plusMinutes(tempsTrajetRetourMinutes);
-
-        // --- Sélection automatique du/des véhicule(s) ---
-        List<Vehicule> vehiculesChoisis = choisirVehicules(nbPassagers, dateHeureDepart, dateHeureRetour);
-
-        // --- Création des Plannings avec répartition des passagers ---
-        List<Planning> plannings = new ArrayList<>();
-        int passagersRestants = nbPassagers;
-
-        for (Vehicule vehicule : vehiculesChoisis) {
-            int passagersDansCeVehicule = Math.min(passagersRestants, vehicule.getCapacite());
-            passagersRestants -= passagersDansCeVehicule;
-
-            Planning planning = new Planning();
-            planning.setVehicule(vehicule);
-            planning.setHotel(hotel);
-            planning.setLieuDepart(aeroport);
-            planning.setLieuRetour(aeroport);
-            planning.setDateHeureDepart(dateHeureDepart);
-            planning.setHeureArriveeHotel(heureArriveeHotel);
-            planning.setHeureDepartHotel(heureDepartHotel);
-            planning.setDateHeureRetour(dateHeureRetour);
-            planning.setReservation(reservation);
-            planning.setNbPassagers(passagersDansCeVehicule);
-            planning.setStatut("PLANIFIE");
-            plannings.add(planningRepository.save(planning));
+        public SimulationResult(List<Planning> assigned, List<Long> unassignedIds) {
+            this.assigned = assigned;
+            this.unassignedIds = unassignedIds;
         }
-
-        return plannings;
     }
 
     /**
-     * Choisit le(s) meilleur(s) véhicule(s) selon les critères :
-     * 1. Essayer un seul véhicule avec capacité >= nbPassagers (plus petite capacité, diesel prioritaire)
-     * 2. Si aucun véhicule seul ne suffit → répartir sur plusieurs véhicules :
-     *    - Prendre le plus grand véhicule disponible, soustraire sa capacité, recommencer
-     *    - Jusqu'à couvrir tous les passagers
+     * Simule l'assignation de véhicules pour toutes les réservations d'une date donnée.
+     *
+     * @param date la date à simuler
+     * @return SimulationResult contenant les lignes assignées et les IDs non assignés
      */
-    private List<Vehicule> choisirVehicules(int nbPassagers, LocalDateTime depart, LocalDateTime retour) {
+    public SimulationResult simuler(LocalDate date) {
+        // Récupérer les réservations du jour, triées par heure
+        List<Reservation> reservations = reservationService.findByDate(date)
+                .stream()
+                .sorted(Comparator.comparing(Reservation::getDateHeure))
+                .collect(Collectors.toList());
+
+        // Tous les véhicules disponibles
         List<Vehicule> tousVehicules = vehiculeRepository.findAll();
 
-        // Tous les véhicules disponibles sur le créneau
-        List<Vehicule> disponibles = tousVehicules.stream()
-                .filter(v -> planningRepository.findOverlapping(v.getId(), depart, retour).isEmpty())
-                .collect(Collectors.toList());
+        // Paramètres de calcul
+        int vitesseMoyenne = parametreService.getVitesseMoyenne();  // km/h
+        int tempsAttente = parametreService.getTempsAttente();        // minutes
 
-        if (disponibles.isEmpty()) {
-            throw new RuntimeException("Aucun véhicule disponible sur le créneau "
-                    + depart + " → " + retour + ".");
-        }
+        Lieu aeroport = lieuRepository.findByCode("AER")
+                .orElseThrow(() -> new RuntimeException("Lieu 'AER' non trouvé en base."));
 
-        // --- Tentative 1 : un seul véhicule suffit ---
-        List<Vehicule> candidatsUniques = disponibles.stream()
-                .filter(v -> v.getCapacite() >= nbPassagers)
-                .sorted(Comparator
-                        .comparingInt(Vehicule::getCapacite)
-                        .thenComparing((Vehicule v) -> dieselPriority(v)))
-                .collect(Collectors.toList());
+        List<Planning> assigned = new ArrayList<>();
+        List<Long> unassignedIds = new ArrayList<>();
+        Set<Long> vehiculesUtilises = new HashSet<>();
+        Random random = new Random();
 
-        if (!candidatsUniques.isEmpty()) {
-            // Un seul véhicule suffit
-            List<Vehicule> result = new ArrayList<>();
-            result.add(candidatsUniques.get(0));
-            return result;
-        }
+        for (Reservation reservation : reservations) {
+            int nbPassager = reservation.getNbPassager();
+            Lieu lieuHotel = reservation.getHotel().getLieu();
 
-        // --- Tentative 2 : répartition sur plusieurs véhicules ---
-        // Trier par capacité décroissante (plus grands d'abord) puis diesel en priorité
-        List<Vehicule> triDescCapacite = disponibles.stream()
-                .sorted(Comparator
-                        .comparingInt(Vehicule::getCapacite).reversed()
-                        .thenComparing((Vehicule v) -> dieselPriority(v)))
-                .collect(Collectors.toList());
+            // Calculer les horaires
+            double distanceAller = distanceService.getDistanceKm(aeroport.getId(), lieuHotel.getId());
+            double distanceRetour = distanceService.getDistanceKm(lieuHotel.getId(), aeroport.getId());
+            long tempsAllerMin = Math.round((distanceAller / vitesseMoyenne) * 60);
+            long tempsRetourMin = Math.round((distanceRetour / vitesseMoyenne) * 60);
 
-        List<Vehicule> vehiculesChoisis = new ArrayList<>();
-        int passagersRestants = nbPassagers;
+            LocalDateTime dateHeureDepart = reservation.getDateHeure();
+            LocalDateTime dateHeureRetour = dateHeureDepart
+                    .plusMinutes(tempsAllerMin)
+                    .plusMinutes(tempsAttente)
+                    .plusMinutes(tempsRetourMin);
 
-        for (Vehicule v : triDescCapacite) {
-            if (passagersRestants <= 0) break;
-            vehiculesChoisis.add(v);
-            passagersRestants -= v.getCapacite();
-        }
+            // Filtrer : véhicules non utilisés avec capacite >= nbPassager
+            List<Vehicule> candidats = tousVehicules.stream()
+                    .filter(v -> !vehiculesUtilises.contains(v.getId()))
+                    .filter(v -> v.getCapacite() >= nbPassager)
+                    .collect(Collectors.toList());
 
-        if (passagersRestants > 0) {
-            int capaciteTotale = disponibles.stream().mapToInt(Vehicule::getCapacite).sum();
-            throw new RuntimeException("Capacité totale insuffisante : " + capaciteTotale
-                    + " places disponibles pour " + nbPassagers + " passagers sur le créneau "
-                    + depart + " → " + retour + ".");
-        }
-
-        // Optimisation finale : pour le dernier véhicule, choisir le plus petit qui suffit
-        // pour les passagers restants dans ce dernier véhicule
-        if (vehiculesChoisis.size() > 1) {
-            // Recalculer les passagers couverts par tous sauf le dernier
-            int couvertsSansDernier = 0;
-            for (int i = 0; i < vehiculesChoisis.size() - 1; i++) {
-                couvertsSansDernier += vehiculesChoisis.get(i).getCapacite();
+            if (candidats.isEmpty()) {
+                unassignedIds.add(reservation.getId());
+                continue;
             }
-            int resteACouvrir = nbPassagers - couvertsSansDernier;
-            Vehicule dernierChoisi = vehiculesChoisis.get(vehiculesChoisis.size() - 1);
 
-            // Chercher un véhicule plus petit qui suffit et qui n'est pas déjà choisi
-            List<Long> idsDejaChoisis = vehiculesChoisis.stream()
-                    .map(Vehicule::getId).collect(Collectors.toList());
+            // Plus petite capacité suffisante
+            int minCapacite = candidats.stream().mapToInt(Vehicule::getCapacite).min().getAsInt();
+            List<Vehicule> plusPetits = candidats.stream()
+                    .filter(v -> v.getCapacite() == minCapacite)
+                    .collect(Collectors.toList());
 
-            disponibles.stream()
-                    .filter(v -> !idsDejaChoisis.contains(v.getId()) || v.getId().equals(dernierChoisi.getId()))
-                    .filter(v -> v.getCapacite() >= resteACouvrir)
-                    .sorted(Comparator
-                            .comparingInt(Vehicule::getCapacite)
-                            .thenComparing((Vehicule v) -> dieselPriority(v)))
-                    .findFirst()
-                    .ifPresent(meilleur -> {
-                        if (meilleur.getCapacite() < dernierChoisi.getCapacite()
-                                || meilleur.getId().equals(dernierChoisi.getId())) {
-                            // Ne remplacer que si c'est un meilleur choix
-                            if (meilleur.getCapacite() < dernierChoisi.getCapacite()) {
-                                vehiculesChoisis.set(vehiculesChoisis.size() - 1, meilleur);
-                            }
-                        }
-                    });
+            Vehicule choisi;
+            if (plusPetits.size() == 1) {
+                choisi = plusPetits.get(0);
+            } else {
+                // Priorité Diesel
+                List<Vehicule> diesels = plusPetits.stream()
+                        .filter(v -> "Diesel".equalsIgnoreCase(v.getTypeCarburant().getLibelle()))
+                        .collect(Collectors.toList());
+                if (!diesels.isEmpty()) {
+                    // Un ou plusieurs Diesel à capacité égale → random parmi les Diesel
+                    choisi = diesels.get(random.nextInt(diesels.size()));
+                } else {
+                    // Même capacité, même type (non-Diesel) → random
+                    choisi = plusPetits.get(random.nextInt(plusPetits.size()));
+                }
+            }
+
+            vehiculesUtilises.add(choisi.getId());
+
+            Planning row = new Planning(
+                    reservation.getId(),
+                    nbPassager,
+                    dateHeureDepart,
+                    dateHeureRetour,
+                    choisi
+            );
+            assigned.add(row);
         }
 
-        return vehiculesChoisis;
-    }
-
-    /**
-     * Retourne 0 pour Diesel (prioritaire), 1 sinon.
-     */
-    private int dieselPriority(Vehicule v) {
-        String type = v.getTypeCarburant().getLibelle();
-        return "Diesel".equalsIgnoreCase(type) ? 0 : 1;
+        return new SimulationResult(assigned, unassignedIds);
     }
 }
