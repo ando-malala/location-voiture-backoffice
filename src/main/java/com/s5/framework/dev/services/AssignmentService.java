@@ -109,7 +109,7 @@ public class AssignmentService {
             LocalDateTime dateHeureDepart = reservation.getDateHeure();
             LocalDateTime dateHeureRetour = dateHeureDepart
                     .plusMinutes(tempsAllerMin)
-                    .plusMinutes(tempsAttente)
+                    // .plusMinutes(tempsAttente)
                     .plusMinutes(tempsRetourMin);
 
             // Filtrer : véhicules non utilisés avec capacite >= nbPassager
