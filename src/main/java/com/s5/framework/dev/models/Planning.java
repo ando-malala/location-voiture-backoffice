@@ -15,17 +15,23 @@ public class Planning {
     /** Heure de retour du véhicule à l'aéroport. */
     private LocalDateTime dateHeureRetour;
     private Vehicule vehicule;
+    /** Distance aller aéroport → hôtel en km. */
+    private Double distanceKm;
+    /** Nom de l'hôtel de destination. */
+    private String nomHotel;
 
     public Planning() {}
 
     public Planning(Long idReservation, Integer nbPassager,
                     LocalDateTime dateHeureDepart, LocalDateTime dateHeureRetour,
-                    Vehicule vehicule) {
+                    Vehicule vehicule, Double distanceKm, String nomHotel) {
         this.idReservation = idReservation;
         this.nbPassager = nbPassager;
         this.dateHeureDepart = dateHeureDepart;
         this.dateHeureRetour = dateHeureRetour;
         this.vehicule = vehicule;
+        this.distanceKm = distanceKm;
+        this.nomHotel = nomHotel;
     }
 
     public Long getIdReservation() { return idReservation; }
@@ -42,4 +48,10 @@ public class Planning {
 
     public Vehicule getVehicule() { return vehicule; }
     public void setVehicule(Vehicule vehicule) { this.vehicule = vehicule; }
+
+    public Double getDistanceKm() { return distanceKm; }
+    public void setDistanceKm(Double distanceKm) { this.distanceKm = distanceKm; }
+
+    public String getNomHotel() { return nomHotel; }
+    public void setNomHotel(String nomHotel) { this.nomHotel = nomHotel; }
 }

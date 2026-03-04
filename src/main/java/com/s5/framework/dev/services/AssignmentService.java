@@ -13,11 +13,11 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.s5.framework.dev.models.Lieu;
+import com.s5.framework.dev.models.Hostel;
 import com.s5.framework.dev.models.Planning;
 import com.s5.framework.dev.models.Reservation;
 import com.s5.framework.dev.models.Vehicule;
-import com.s5.framework.dev.repositories.LieuRepository;
+import com.s5.framework.dev.repositories.HostelRepository;
 import com.s5.framework.dev.repositories.VehiculeRepository;
 
 /**
@@ -37,19 +37,19 @@ import com.s5.framework.dev.repositories.VehiculeRepository;
 public class AssignmentService {
 
     private final VehiculeRepository vehiculeRepository;
-    private final LieuRepository lieuRepository;
+    private final HostelRepository hostelRepository;
     private final DistanceService distanceService;
     private final ParametreService parametreService;
     private final ReservationService reservationService;
 
     @Autowired
     public AssignmentService(VehiculeRepository vehiculeRepository,
-                             LieuRepository lieuRepository,
+                             HostelRepository hostelRepository,
                              DistanceService distanceService,
                              ParametreService parametreService,
                              ReservationService reservationService) {
         this.vehiculeRepository = vehiculeRepository;
-        this.lieuRepository = lieuRepository;
+        this.hostelRepository = hostelRepository;
         this.distanceService = distanceService;
         this.parametreService = parametreService;
         this.reservationService = reservationService;
@@ -88,8 +88,8 @@ public class AssignmentService {
         int vitesseMoyenne = parametreService.getVitesseMoyenne();  // km/h
         int tempsAttente = parametreService.getTempsAttente();        // minutes
 
-        Lieu aeroport = lieuRepository.findByCode("AER")
-                .orElseThrow(() -> new RuntimeException("Lieu 'AER' non trouvé en base."));
+        Hostel aeroport = hostelRepository.findById(1L)
+                .orElseThrow(() -> new RuntimeException("Hôtel aéroport (id=1) non trouvé en base."));
 
         List<Planning> assigned = new ArrayList<>();
         List<Long> unassignedIds = new ArrayList<>();
@@ -98,11 +98,11 @@ public class AssignmentService {
 
         for (Reservation reservation : reservations) {
             int nbPassager = reservation.getNbPassager();
-            Lieu lieuHotel = reservation.getHotel().getLieu();
+            Hostel hotelArrivee = reservation.getHotel();
 
             // Calculer les horaires
-            double distanceAller = distanceService.getDistanceKm(aeroport.getId(), lieuHotel.getId());
-            double distanceRetour = distanceService.getDistanceKm(lieuHotel.getId(), aeroport.getId());
+            double distanceAller = distanceService.getDistanceKm(aeroport.getId(), hotelArrivee.getId());
+            double distanceRetour = distanceService.getDistanceKm(hotelArrivee.getId(), aeroport.getId());
             long tempsAllerMin = Math.round((distanceAller / vitesseMoyenne) * 60);
             long tempsRetourMin = Math.round((distanceRetour / vitesseMoyenne) * 60);
 
@@ -153,7 +153,9 @@ public class AssignmentService {
                     nbPassager,
                     dateHeureDepart,
                     dateHeureRetour,
-                    choisi
+                    choisi,
+                    distanceAller,
+                    hotelArrivee.getNom()
             );
             assigned.add(row);
         }

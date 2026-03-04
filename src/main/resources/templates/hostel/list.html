@@ -25,17 +25,15 @@
                 <tr>
                     <th>ID</th>
                     <th>Nom</th>
-                    <th>Lieu</th>
                 </tr>
             </thead>
             <tbody>
                 <tr th:each="h : ${hostels}">
                     <td th:text="${h.id}"></td>
                     <td th:text="${h.nom}"></td>
-                    <td th:text="${h.lieu != null ? h.lieu.code + ' - ' + h.lieu.nom : '-'}"></td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(hostels)}">
-                    <td colspan="3" style="text-align:center; color:#9ca3af; padding:32px;">Aucun hôtel trouvé.</td>
+                    <td colspan="2" style="text-align:center; color:#9ca3af; padding:32px;">Aucun hôtel trouvé.</td>
                 </tr>
             </tbody>
         </table>

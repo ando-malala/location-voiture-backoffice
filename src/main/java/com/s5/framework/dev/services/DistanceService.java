@@ -21,19 +21,19 @@ public class DistanceService {
     }
 
     /**
-     * Retourne la distance (en km) entre deux lieux.
+     * Retourne la distance (en km) entre deux hôtels.
      */
-    public Optional<Distance> findByLieux(Long lieuDepartId, Long lieuArriveeId) {
-        return distanceRepository.findByLieuDepartIdAndLieuArriveeId(lieuDepartId, lieuArriveeId);
+    public Optional<Distance> findByHotels(Long hotelDepartId, Long hotelArriveeId) {
+        return distanceRepository.findByHotelDepartIdAndHotelArriveeId(hotelDepartId, hotelArriveeId);
     }
 
     /**
-     * Retourne la distance en km entre deux lieux, ou lève une exception si introuvable.
+     * Retourne la distance en km entre deux hôtels, ou lève une exception si introuvable.
      */
-    public double getDistanceKm(Long lieuDepartId, Long lieuArriveeId) {
-        return distanceRepository.findByLieuDepartIdAndLieuArriveeId(lieuDepartId, lieuArriveeId)
+    public double getDistanceKm(Long hotelDepartId, Long hotelArriveeId) {
+        return distanceRepository.findByHotelDepartIdAndHotelArriveeId(hotelDepartId, hotelArriveeId)
                 .map(Distance::getDistanceKm)
                 .orElseThrow(() -> new RuntimeException(
-                        "Distance introuvable entre lieu " + lieuDepartId + " et lieu " + lieuArriveeId));
+                        "Distance introuvable entre hotel " + hotelDepartId + " et hotel " + hotelArriveeId));
     }
 }

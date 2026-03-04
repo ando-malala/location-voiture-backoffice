@@ -11,7 +11,7 @@ import com.s5.framework.dev.models.Distance;
 public interface DistanceRepository extends JpaRepository<Distance, Long> {
 
     /**
-     * Trouve la distance entre deux lieux par leurs IDs.
+     * Trouve la distance entre deux hôtels par leurs IDs.
      */
-    Optional<Distance> findByLieuDepartIdAndLieuArriveeId(Long lieuDepartId, Long lieuArriveeId);
+    Optional<Distance> findByHotelDepartIdAndHotelArriveeId(Long hotelDepartId, Long hotelArriveeId);
 }

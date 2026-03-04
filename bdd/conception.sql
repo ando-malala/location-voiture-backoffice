@@ -32,17 +32,9 @@ create Table parametre(
     FOREIGN KEY (idUnite) REFERENCES unite(id)
 );
 
-create table lieu(
-    id serial primary key,
-    code VARCHAR(20) NOT NULL,
-    nom VARCHAR(100) NOT NULL
-);
-
 create table hotel (
     id serial primary key,
-    nom VARCHAR(100) NOT NULL,
-    lieuId INT NOT NULL,
-    FOREIGN KEY (lieuId) REFERENCES lieu(id)
+    nom VARCHAR(100) NOT NULL
 );
 
 create Table distance (
@@ -50,8 +42,8 @@ create Table distance (
     idLieuDepart INT NOT NULL,
     idLieuArrivee INT NOT NULL,
     distanceKm FLOAT NOT NULL,
-    FOREIGN KEY (idLieuDepart) REFERENCES lieu(id),
-    FOREIGN KEY (idLieuArrivee) REFERENCES lieu(id)
+    FOREIGN KEY (idLieuDepart) REFERENCES hotel(id),
+    FOREIGN KEY (idLieuArrivee) REFERENCES hotel(id)
 );
 
 create table reservation (

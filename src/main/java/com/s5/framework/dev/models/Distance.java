@@ -1,5 +1,7 @@
 package com.s5.framework.dev.models;
 
+import java.util.Objects;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -9,9 +11,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.util.Objects;
 
-/** Distance en km entre deux lieux (départ → arrivée). */
+/** Distance en km entre deux hôtels (départ → arrivée). Le point de départ est toujours l'aéroport (hotel id=1). */
 @Entity
 @Table(name = "distance")
 public class Distance {
@@ -22,11 +23,11 @@ public class Distance {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "idlieudepart", nullable = false)
-    private Lieu lieuDepart;
+    private Hostel hotelDepart;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "idlieuarrivee", nullable = false)
-    private Lieu lieuArrivee;
+    private Hostel hotelArrivee;
 
     @Column(name = "distancekm", nullable = false)
     private Double distanceKm;
@@ -34,21 +35,21 @@ public class Distance {
     public Distance() {
     }
 
-    public Distance(Long id, Lieu lieuDepart, Lieu lieuArrivee, Double distanceKm) {
+    public Distance(Long id, Hostel hotelDepart, Hostel hotelArrivee, Double distanceKm) {
         this.id = id;
-        this.lieuDepart = lieuDepart;
-        this.lieuArrivee = lieuArrivee;
+        this.hotelDepart = hotelDepart;
+        this.hotelArrivee = hotelArrivee;
         this.distanceKm = distanceKm;
     }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
-    public Lieu getLieuDepart() { return lieuDepart; }
-    public void setLieuDepart(Lieu lieuDepart) { this.lieuDepart = lieuDepart; }
+    public Hostel getHotelDepart() { return hotelDepart; }
+    public void setHotelDepart(Hostel hotelDepart) { this.hotelDepart = hotelDepart; }
 
-    public Lieu getLieuArrivee() { return lieuArrivee; }
-    public void setLieuArrivee(Lieu lieuArrivee) { this.lieuArrivee = lieuArrivee; }
+    public Hostel getHotelArrivee() { return hotelArrivee; }
+    public void setHotelArrivee(Hostel hotelArrivee) { this.hotelArrivee = hotelArrivee; }
 
     public Double getDistanceKm() { return distanceKm; }
     public void setDistanceKm(Double distanceKm) { this.distanceKm = distanceKm; }

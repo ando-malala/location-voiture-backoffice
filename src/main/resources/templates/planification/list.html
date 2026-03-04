@@ -12,7 +12,7 @@
 
 <main class="main-content">
     <div class="page-title">🗓️ Planification</div>
-    <div class="page-subtitle">Simulation statique d'assignation des véhicules aux réservations</div>
+    <!-- <div class="page-subtitle">Simulation statique d'assignation des véhicules aux réservations</div> -->
 
     <!-- Sélecteur de date -->
     <div class="content-card" style="margin-bottom:24px;">
@@ -47,9 +47,11 @@
                 <thead>
                     <tr>
                         <th>ID Réservation</th>
+                        <th>Hôtel destination</th>
                         <th style="text-align:center;">Nb Passagers</th>
                         <th>Date-Heure Départ (Aéroport)</th>
                         <th>Date-Heure Retour (Aéroport)</th>
+                        <th style="text-align:center;">Distance (km)</th>
                         <th>ID Véhicule</th>
                         <th>Référence</th>
                         <th>Type Carburant</th>
@@ -58,9 +60,11 @@
                 <tbody>
                     <tr th:each="row : ${assigned}">
                         <td th:text="${row.idReservation}"></td>
+                        <td th:text="${row.nomHotel}"></td>
                         <td style="text-align:center;" th:text="${row.nbPassager}"></td>
                         <td th:text="${#temporals.format(row.dateHeureDepart, 'dd/MM/yyyy HH:mm')}"></td>
                         <td th:text="${#temporals.format(row.dateHeureRetour, 'dd/MM/yyyy HH:mm')}"></td>
+                        <td style="text-align:center;" th:text="${row.distanceKm} + ' km'"></td>
                         <td th:text="${row.vehicule.id}"></td>
                         <td th:text="${row.vehicule.reference}"></td>
                         <td th:text="${row.vehicule.typeCarburant.libelle}"></td>
