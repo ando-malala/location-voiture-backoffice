@@ -1,6 +1,8 @@
 package com.s5.framework.dev.controllers;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,7 +78,7 @@ public class ReservationViewController {
         Reservation reservation = new Reservation();
         reservation.setIdClient(idClient);
         reservation.setNbPassager(nbPassager);
-        reservation.setDateHeure(LocalDate.parse(dateHeure).atStartOfDay());
+        reservation.setDateHeure(LocalDateTime.parse(dateHeure, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")));
         reservation.setHotel(hostel);
 
         reservationService.create(reservation);
