@@ -49,22 +49,79 @@
                         <th>ID Réservation</th>
                         <th>Hôtel destination</th>
                         <th style="text-align:center;">Nb Passagers</th>
-                        <th>Date-Heure Départ (Aéroport)</th>
-                        <th>Date-Heure Retour (Aéroport)</th>
+                        <th>Date-Heure Départ</th>
+                        <th>Date-Heure Retour</th>
                         <th style="text-align:center;">Distance (km)</th>
+                        <th>Type de trajet</th>
+                        <th style="text-align:center;">Capacité</th>
                         <th>ID Véhicule</th>
                         <th>Référence</th>
                         <th>Type Carburant</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr th:each="row : ${assigned}">
-                        <td th:text="${row.idReservation}"></td>
-                        <td th:text="${row.nomHotel}"></td>
-                        <td style="text-align:center;" th:text="${row.nbPassager}"></td>
+                    <tr th:each="row : ${assigned}"
+                        th:classappend="${row.combinedTrip} ? 'row-combined' : ''">
+
+                        <!-- ID(s) Réservation -->
+                        <td>
+                            <span th:each="res,it : ${row.reservations}">
+                                <span th:text="${res.idReservation}"></span>
+                                <br th:unless="${it.last}"/>
+                            </span>
+                        </td>
+
+                        <!-- Hôtel(s) destination -->
+                        <td>
+                            <span th:each="res,it : ${row.reservations}">
+                                <span th:text="${res.nomHotel}"></span>
+                                <br th:unless="${it.last}"/>
+                            </span>
+                        </td>
+
+                        <!-- Nb Passagers (+ total pour combiné) -->
+                        <td style="text-align:center;">
+                            <span th:each="res,it : ${row.reservations}">
+                                <span th:text="${res.nbPassager}"></span>
+                                <br th:unless="${it.last}"/>
+                            </span>
+                            <span th:if="${row.combinedTrip}"
+                                  style="display:block; margin-top:4px; font-size:0.78rem;
+                                         color:#92400e; font-weight:700; border-top:1px solid #fde68a;">
+                                Total : <span th:text="${row.totalPassagers}"></span>
+                            </span>
+                        </td>
+
+                        <!-- Date-Heure Départ (identique pour tout le trajet) -->
                         <td th:text="${#temporals.format(row.dateHeureDepart, 'dd/MM/yyyy HH:mm')}"></td>
+
+                        <!-- Date-Heure Retour -->
                         <td th:text="${#temporals.format(row.dateHeureRetour, 'dd/MM/yyyy HH:mm')}"></td>
-                        <td style="text-align:center;" th:text="${row.distanceKm} + ' km'"></td>
+
+                        <!-- Distance(s) -->
+                        <td style="text-align:center;">
+                            <span th:each="res,it : ${row.reservations}">
+                                <span th:text="${res.distanceKm} + ' km'"></span>
+                                <br th:unless="${it.last}"/>
+                            </span>
+                        </td>
+
+                        <!-- Type de trajet -->
+                        <td>
+                            <span th:if="${row.combinedTrip}">
+                                <span class="badge-combined">🔀 Combiné</span>
+                                <span style="font-size:0.8rem; color:#374151; display:block; margin-top:4px;"
+                                      th:text="${'Aéroport → ' + #strings.listJoin(row.routeHotels, ' → ') + ' → Aéroport'}">
+                                </span>
+                            </span>
+                            <span th:unless="${row.combinedTrip}" style="color:#6b7280; font-size:0.85rem;">Simple</span>
+                        </td>
+
+                        <!-- Capacité du véhicule -->
+                        <td style="text-align:center; font-weight:600;"
+                            th:text="${row.vehicule.capacite} + ' pl.'"></td>
+
+                        <!-- Véhicule -->
                         <td th:text="${row.vehicule.id}"></td>
                         <td th:text="${row.vehicule.reference}"></td>
                         <td th:text="${row.vehicule.typeCarburant.libelle}"></td>
@@ -128,6 +185,23 @@
     .badge-error {
         background: #fee2e2 !important;
         color: #dc2626 !important;
+    }
+    /* Trajet combiné */
+    .row-combined {
+        background: #fffbeb !important;
+    }
+    .row-combined:hover {
+        background: #fef3c7 !important;
+    }
+    .badge-combined {
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 999px;
+        white-space: nowrap;
     }
 </style>
 
