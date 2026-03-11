@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trajets véhicule — Back-Office</title>
+    <th:block th:replace="~{fragments/sidebar :: sidebarStyles}"></th:block>
+</head>
+<body>
+
+<th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+
+<main class="main-content">
+    <div class="page-title">🚐 Trajets du Véhicule #<span th:text="${vehicule.id}"></span></div>
+    <div class="page-subtitle">
+        <span th:text="${vehicule.capacite} + ' places'"></span> ·
+        <span th:text="${vehicule.typeCarburant.nom}"></span>
+        <span th:if="${filterDate != null}">
+            · Date : <strong th:text="${filterDate}"></strong>
+        </span>
+    </div>
+
+    <div class="content-card">
+        <!-- Barre de navigation -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
+            <div style="display:flex; gap:8px; align-items:center;">
+                <a th:href="@{/plannings(date=${filterDate})}" class="btn-action btn-secondary-action">← Retour aux véhicules</a>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <span style="font-weight:600; color:#374151;">
+                    <span th:text="${#lists.size(plannings)}">0</span> trajet(s)
+                </span>
+                <a th:href="@{/plannings/new}" class="btn-action btn-primary-action">+ Nouveau planning</a>
+            </div>
+        </div>
+
+        <!-- Tableau des trajets -->
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Hôtel destination</th>
+                    <th>Lieu départ</th>
+                    <th>Lieu retour</th>
+                    <th>Date / Heure départ</th>
+                    <th>Arrivée hôtel</th>
+                    <th>Départ hôtel</th>
+                    <th>Date / Heure retour</th>
+                    <th>Réservation</th>
+                    <th>Client</th>
+                    <th>Nb Passagers</th>
+                    <th>Statut</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="p : ${plannings}">
+                    <td th:text="${p.id}"></td>
+                    <td th:text="${p.hotel.nom}"></td>
+                    <td th:text="${p.lieuDepart.code + ' - ' + p.lieuDepart.nom}"></td>
+                    <td th:text="${p.lieuRetour.code + ' - ' + p.lieuRetour.nom}"></td>
+                    <td th:text="${#temporals.format(p.dateHeureDepart, 'dd/MM/yyyy HH:mm')}"></td>
+                    <td th:text="${p.heureArriveeHotel != null ? #temporals.format(p.heureArriveeHotel, 'HH:mm') : '—'}"></td>
+                    <td th:text="${p.heureDepartHotel != null ? #temporals.format(p.heureDepartHotel, 'HH:mm') : '—'}"></td>
+                    <td th:text="${#temporals.format(p.dateHeureRetour, 'dd/MM/yyyy HH:mm')}"></td>
+                    <td th:text="'#' + ${p.reservation.id}"></td>
+                    <td th:text="'Client ' + ${p.reservation.idClient}"></td>
+                    <td th:text="${p.reservation.nbPassager}"></td>
+                    <td>
+                        <span class="badge-type"
+                              th:classappend="${p.statut == 'PLANIFIE'} ? 'badge-planifie' :
+                                              (${p.statut == 'EN_COURS'} ? 'badge-encours' : 'badge-termine')"
+                              th:text="${p.statut}"></span>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(plannings)}">
+                    <td colspan="12" style="text-align:center; color:#9ca3af; padding:32px;">Aucun trajet trouvé pour ce véhicule.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<style>
+    .badge-planifie { background: #dbeafe; color: #1d4ed8; }
+    .badge-encours  { background: #fef3c7; color: #92400e; }
+    .badge-termine  { background: #d1fae5; color: #065f46; }
+</style>
+
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planification — Back-Office</title>
+    <th:block th:replace="~{fragments/sidebar :: sidebarStyles}"></th:block>
+</head>
+<body>
+
+<th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+
+<main class="main-content">
+    <div class="page-title">🗓️ Planification</div>
+    <!-- <div class="page-subtitle">Simulation statique d'assignation des véhicules aux réservations</div> -->
+
+    <!-- Sélecteur de date -->
+    <div class="content-card" style="margin-bottom:24px;">
+        <form method="get" th:action="@{/planification}" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <label for="date" style="font-size:0.9rem; font-weight:600; color:#374151; white-space:nowrap;">
+                Choisir une date :
+            </label>
+            <input type="date" id="date" name="date" th:value="${filterDate}"
+                   style="padding:9px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:0.9rem; outline:none; min-width:180px;">
+            <button type="submit" class="btn-action btn-primary-action">🔍 Simuler</button>
+            <a th:href="@{/planification}" class="btn-action btn-secondary-action">✕ Effacer</a>
+        </form>
+        <p th:if="${filterDate == null}" style="margin-top:12px; font-size:0.85rem; color:#9ca3af; font-style:italic;">
+            Sélectionnez une date pour lancer la simulation d'assignation des véhicules.
+        </p>
+    </div>
+
+    <!-- Message d'erreur -->
+    <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+    <!-- Résultats (affichés uniquement si une date est choisie) -->
+    <th:block th:if="${assigned != null}">
+
+        <!-- ===== Tableau des assignations ===== -->
+        <div class="content-card" style="margin-bottom:24px;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+                <span style="font-size:1.05rem; font-weight:700; color:#1e40af;">✅ Réservations assignées</span>
+                <span class="badge-count" th:text="${#lists.size(assigned)}">0</span>
+            </div>
+
+            <table class="data-table" th:if="${!#lists.isEmpty(assigned)}">
+                <thead>
+                    <tr>
+                        <th>ID Réservation</th>
+                        <th>Hôtel destination</th>
+                        <th style="text-align:center;">Nb Passagers</th>
+                        <th>Date-Heure Départ</th>
+                        <th>Date-Heure Retour</th>
+                        <th style="text-align:center;">Distance (km)</th>
+                        <th>Type de trajet</th>
+                        <th style="text-align:center;">Capacité</th>
+                        <th>ID Véhicule</th>
+                        <th>Référence</th>
+                        <th>Type Carburant</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="row : ${assigned}"
+                        th:classappend="${row.combinedTrip} ? 'row-combined' : ''">
+
+                        <!-- ID(s) Réservation -->
+                        <td>
+                            <span th:each="res,it : ${row.reservations}">
+                                <span th:text="${res.idReservation}"></span>
+                                <br th:unless="${it.last}"/>
+                            </span>
+                        </td>
+
+                        <!-- Hôtel(s) destination -->
+                        <td>
+                            <span th:each="res,it : ${row.reservations}">
+                                <span th:text="${res.nomHotel}"></span>
+                                <br th:unless="${it.last}"/>
+                            </span>
+                        </td>
+
+                        <!-- Nb Passagers (+ total pour combiné) -->
+                        <td style="text-align:center;">
+                            <span th:each="res,it : ${row.reservations}">
+                                <span th:text="${res.nbPassager}"></span>
+                                <br th:unless="${it.last}"/>
+                            </span>
+                            <span th:if="${row.combinedTrip}"
+                                  style="display:block; margin-top:4px; font-size:0.78rem;
+                                         color:#92400e; font-weight:700; border-top:1px solid #fde68a;">
+                                Total : <span th:text="${row.totalPassagers}"></span>
+                            </span>
+                        </td>
+
+                        <!-- Date-Heure Départ (identique pour tout le trajet) -->
+                        <td th:text="${#temporals.format(row.dateHeureDepart, 'dd/MM/yyyy HH:mm')}"></td>
+
+                        <!-- Date-Heure Retour -->
+                        <td th:text="${#temporals.format(row.dateHeureRetour, 'dd/MM/yyyy HH:mm')}"></td>
+
+                        <!-- Distance(s) -->
+                        <td style="text-align:center;">
+                            <span th:each="res,it : ${row.reservations}">
+                                <span th:text="${res.distanceKm} + ' km'"></span>
+                                <br th:unless="${it.last}"/>
+                            </span>
+                        </td>
+
+                        <!-- Type de trajet -->
+                        <td>
+                            <span th:if="${row.combinedTrip}">
+                                <span class="badge-combined">🔀 Combiné</span>
+                                <span style="font-size:0.8rem; color:#374151; display:block; margin-top:4px;"
+                                      th:text="${'Aéroport → ' + #strings.listJoin(row.routeHotels, ' → ') + ' → Aéroport'}">
+                                </span>
+                            </span>
+                            <span th:unless="${row.combinedTrip}" style="color:#6b7280; font-size:0.85rem;">Simple</span>
+                        </td>
+
+                        <!-- Capacité du véhicule -->
+                        <td style="text-align:center; font-weight:600;"
+                            th:text="${row.vehicule.capacite} + ' pl.'"></td>
+
+                        <!-- Véhicule -->
+                        <td th:text="${row.vehicule.id}"></td>
+                        <td th:text="${row.vehicule.reference}"></td>
+                        <td th:text="${row.vehicule.typeCarburant.libelle}"></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p th:if="${#lists.isEmpty(assigned)}"
+               style="text-align:center; color:#9ca3af; padding:24px; font-style:italic;">
+                Aucune réservation assignée pour cette date.
+            </p>
+        </div>
+
+        <!-- ===== Réservations non assignées ===== -->
+        <div class="content-card" th:if="${!#lists.isEmpty(unassigned)}">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+                <span style="font-size:1.05rem; font-weight:700; color:#dc2626;">❌ Réservations sans véhicule disponible</span>
+                <span class="badge-count badge-error" th:text="${#lists.size(unassigned)}">0</span>
+            </div>
+            <p style="font-size:0.85rem; color:#6b7280; margin-bottom:12px;">
+                Aucun véhicule n'a une capacité suffisante pour ces réservations (tous les véhicules avec suffisamment de places étaient déjà attribués).
+            </p>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID Réservation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="rid : ${unassigned}">
+                        <td th:text="${rid}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </th:block>
+</main>
+
+<style>
+    .alert {
+        padding: 14px 20px;
+        border-radius: 10px;
+        margin-bottom: 16px;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    .alert-error {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+    .badge-count {
+        background: #dbeafe;
+        color: #1e40af;
+        font-size: 0.8rem;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 999px;
+    }
+    .badge-error {
+        background: #fee2e2 !important;
+        color: #dc2626 !important;
+    }
+    /* Trajet combiné */
+    .row-combined {
+        background: #fffbeb !important;
+    }
+    .row-combined:hover {
+        background: #fef3c7 !important;
+    }
+    .badge-combined {
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 999px;
+        white-space: nowrap;
+    }
+</style>
+
+</body>
+</html>

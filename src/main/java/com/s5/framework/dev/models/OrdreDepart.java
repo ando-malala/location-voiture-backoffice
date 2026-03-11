@@ -1,36 +1,17 @@
 package com.s5.framework.dev.models;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
 import java.time.LocalTime;
 import java.util.Objects;
 
-/** Ordre de départ d'un véhicule depuis l'aéroport pour une réservation donnée. */
-@Entity
-@Table(name = "ordredepart")
+/**
+ * Ancien ordre de départ — table supprimée, classe conservée comme POJO pour compatibilité.
+ * La planification est désormais une simulation pure (non persistée).
+ */
 public class OrdreDepart {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "idvehicule", nullable = false)
     private Vehicule vehicule;
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "idreservation", nullable = false)
     private Reservation reservation;
-
-    /** Heure de départ du véhicule de l'aéroport. */
-    @Column(name = "heuredepart", nullable = false)
     private LocalTime heureDepart;
 
     public OrdreDepart() {

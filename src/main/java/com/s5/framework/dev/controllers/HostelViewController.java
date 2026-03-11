@@ -1,9 +1,7 @@
 package com.s5.framework.dev.controllers;
 
-import com.s5.framework.dev.models.Hostel;
-import com.s5.framework.dev.models.Lieu;
-import com.s5.framework.dev.services.HostelService;
-import com.s5.framework.dev.services.LieuService;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,7 +10,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.List;
+import com.s5.framework.dev.models.Hostel;
+import com.s5.framework.dev.services.HostelService;
 
 /**
  * Contrôleur Spring MVC pour les pages Thymeleaf des Hôtels.
@@ -22,12 +21,10 @@ import java.util.List;
 public class HostelViewController {
 
     private final HostelService hostelService;
-    private final LieuService lieuService;
 
     @Autowired
-    public HostelViewController(HostelService hostelService, LieuService lieuService) {
+    public HostelViewController(HostelService hostelService) {
         this.hostelService = hostelService;
-        this.lieuService = lieuService;
     }
 
     /**
@@ -37,6 +34,7 @@ public class HostelViewController {
     public String list(Model model) {
         List<Hostel> hostels = hostelService.findAll();
         model.addAttribute("hostels", hostels);
+        model.addAttribute("activePage", "hostels");
         return "hostel/list";
     }
 
@@ -46,7 +44,7 @@ public class HostelViewController {
     @GetMapping("/new")
     public String insertForm(Model model) {
         model.addAttribute("hostel", new Hostel());
-        model.addAttribute("lieux", lieuService.findAll());
+        model.addAttribute("activePage", "hostels");
         return "hostel/insert";
     }
 
@@ -54,12 +52,9 @@ public class HostelViewController {
      * POST /hostels/save -> Sauvegarde un nouvel hôtel
      */
     @PostMapping("/save")
-    public String save(@RequestParam String nom, @RequestParam Long lieuId) {
-        Lieu lieu = lieuService.findById(lieuId)
-                .orElseThrow(() -> new RuntimeException("Lieu non trouvé avec l'ID : " + lieuId));
+    public String save(@RequestParam String nom) {
         Hostel hostel = new Hostel();
         hostel.setNom(nom);
-        hostel.setLieu(lieu);
         hostelService.create(hostel);
         return "redirect:/hostels";
     }
