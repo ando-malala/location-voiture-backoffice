@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifier Paramètre — Back-Office</title>
+    <th:block th:replace="~{fragments/sidebar :: sidebarStyles}"></th:block>
+</head>
+<body>
+
+<th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+
+<main class="main-content">
+    <div class="page-title">✏️ Modifier le Paramètre #<span th:text="${parametre.id}"></span></div>
+    <div class="page-subtitle">Mettre à jour les informations du paramètre</div>
+
+    <div class="form-card">
+        <form method="post" th:action="@{/parametres/update}">
+            <input type="hidden" name="id" th:value="${parametre.id}">
+
+            <div class="form-group">
+                <label for="libelle">Libellé</label>
+                <input type="text" id="libelle" name="libelle" maxlength="255"
+                       th:value="${parametre.libelle}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="valeur">Valeur</label>
+                <input type="number" id="valeur" name="valeur" min="0"
+                       th:value="${parametre.valeur}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="uniteId">Unité</label>
+                <select id="uniteId" name="uniteId" required>
+                    <option th:each="u : ${unites}"
+                            th:value="${u.id}"
+                            th:text="${u.libelle}"
+                            th:selected="${parametre.unite != null and parametre.unite.id == u.id}">
+                    </option>
+                </select>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:24px;">
+                <button type="submit" class="btn-action btn-primary-action">💾 Mettre à jour</button>
+                <a th:href="@{/parametres}" class="btn-action btn-secondary-action">← Annuler</a>
+            </div>
+        </form>
+    </div>
+</main>
+
+</body>
+</html>

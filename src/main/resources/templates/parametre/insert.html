@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nouveau Paramètre — Back-Office</title>
+    <th:block th:replace="~{fragments/sidebar :: sidebarStyles}"></th:block>
+</head>
+<body>
+
+<th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+
+<main class="main-content">
+    <div class="page-title">⚙️ Nouveau Paramètre</div>
+    <div class="page-subtitle">Ajouter un paramètre de configuration</div>
+
+    <div class="form-card">
+        <form method="post" th:action="@{/parametres/save}">
+
+            <div class="form-group">
+                <label for="libelle">Libellé</label>
+                <input type="text" id="libelle" name="libelle" maxlength="255"
+                       placeholder="Ex: Vitesse moyenne" required>
+            </div>
+
+            <div class="form-group">
+                <label for="valeur">Valeur</label>
+                <input type="number" id="valeur" name="valeur" min="0"
+                       placeholder="Ex: 60" required>
+            </div>
+
+            <div class="form-group">
+                <label for="uniteId">Unité</label>
+                <select id="uniteId" name="uniteId" required>
+                    <option value="" disabled selected>-- Choisir --</option>
+                    <option th:each="u : ${unites}"
+                            th:value="${u.id}"
+                            th:text="${u.libelle}">
+                    </option>
+                </select>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:24px;">
+                <button type="submit" class="btn-action btn-primary-action">💾 Enregistrer</button>
+                <a th:href="@{/parametres}" class="btn-action btn-secondary-action">← Annuler</a>
+            </div>
+        </form>
+    </div>
+</main>
+
+</body>
+</html>

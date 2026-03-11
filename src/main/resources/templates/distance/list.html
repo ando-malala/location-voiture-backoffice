@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distances — Back-Office</title>
+    <th:block th:replace="~{fragments/sidebar :: sidebarStyles}"></th:block>
+</head>
+<body>
+
+<th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+
+<main class="main-content">
+    <div class="page-title">📍 Distances</div>
+    <div class="page-subtitle">Gestion des distances entre hôtels (en km)</div>
+
+    <div class="content-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <span style="font-weight:600; color:#374151;">Liste des distances (<span th:text="${#lists.size(distances)}">0</span>)</span>
+            <a th:href="@{/distances/new}" class="btn-action btn-primary-action">+ Nouvelle distance</a>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Hôtel Départ</th>
+                    <th>Hôtel Arrivée</th>
+                    <th>Distance (km)</th>
+                    <th style="text-align:center;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="d : ${distances}">
+                    <td th:text="${d.id}"></td>
+                    <td th:text="${d.hotelDepart != null ? d.hotelDepart.nom : '-'}"></td>
+                    <td th:text="${d.hotelArrivee != null ? d.hotelArrivee.nom : '-'}"></td>
+                    <td th:text="${d.distanceKm}"></td>
+                    <td style="text-align:center; display:flex; gap:8px; justify-content:center;">
+                        <a th:href="@{/distances/edit/{id}(id=${d.id})}" class="btn-action btn-warning-action">✏️ Modifier</a>
+                        <form th:action="@{/distances/delete/{id}(id=${d.id})}" method="post"
+                              onsubmit="return confirm('Supprimer cette distance ?')">
+                            <button type="submit" class="btn-action btn-danger-action">🗑️ Supprimer</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(distances)}">
+                    <td colspan="5" style="text-align:center; color:#9ca3af; padding:32px;">Aucune distance enregistrée.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+</body>
+</html>
