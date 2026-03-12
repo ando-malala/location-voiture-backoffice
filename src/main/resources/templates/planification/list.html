@@ -47,6 +47,7 @@
                 <thead>
                     <tr>
                         <th>ID Réservation</th>
+                        <th>Client</th>
                         <th>Hôtel destination</th>
                         <th style="text-align:center;">Nb Passagers</th>
                         <th>Date-Heure Départ</th>
@@ -67,6 +68,14 @@
                         <td>
                             <span th:each="res,it : ${row.reservations}">
                                 <span th:text="${res.idReservation}"></span>
+                                <br th:unless="${it.last}"/>
+                            </span>
+                        </td>
+
+                        <!-- Client(s) -->
+                        <td>
+                            <span th:each="res,it : ${row.reservations}">
+                                <span th:text="${res.idClient}"></span>
                                 <br th:unless="${it.last}"/>
                             </span>
                         </td>
@@ -142,17 +151,27 @@
                 <span class="badge-count badge-error" th:text="${#lists.size(unassigned)}">0</span>
             </div>
             <p style="font-size:0.85rem; color:#6b7280; margin-bottom:12px;">
-                Aucun véhicule n'a une capacité suffisante pour ces réservations (tous les véhicules avec suffisamment de places étaient déjà attribués).
+                Aucun véhicule disponible n'a une capacité suffisante pour ces réservations.
             </p>
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>ID Réservation</th>
+                        <th>ID</th>
+                        <th>Client</th>
+                        <th>Hôtel destination</th>
+                        <th style="text-align:center;">Nb Passagers</th>
+                        <th>Date / Heure</th>
+                        <th>Motif</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr th:each="rid : ${unassigned}">
-                        <td th:text="${rid}"></td>
+                    <tr th:each="res : ${unassigned}">
+                        <td th:text="${res.id}"></td>
+                        <td th:text="${res.idClient}"></td>
+                        <td th:text="${res.hotel.nom}"></td>
+                        <td style="text-align:center; font-weight:600;" th:text="${res.nbPassager}"></td>
+                        <td th:text="${#temporals.format(res.dateHeure, 'dd/MM/yyyy HH:mm')}"></td>
+                        <td style="color:#991b1b; font-size:0.82rem;">Aucun véhicule avec capacité ≥ <span th:text="${res.nbPassager}"></span> pl. disponible</td>
                     </tr>
                 </tbody>
             </table>
