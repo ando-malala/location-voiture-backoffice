@@ -42,7 +42,7 @@ public class PlanningViewController {
             try {
                 SimulationResult result = assignmentService.simuler(localDate);
                 model.addAttribute("assigned", result.assigned);
-                model.addAttribute("unassigned", result.unassignedIds);
+                model.addAttribute("unassigned", result.unassigned);
             } catch (RuntimeException e) {
                 model.addAttribute("errorMessage", "Erreur lors de la simulation : " + e.getMessage());
                 model.addAttribute("assigned", List.of());

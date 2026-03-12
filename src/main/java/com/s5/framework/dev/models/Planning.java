@@ -20,19 +20,22 @@ public class Planning {
 
     public static class ResInfo {
         private final Long    idReservation;
+        private final String  idClient;
         private final Integer nbPassager;
         private final String  nomHotel;
         private final Double  distanceKm;
 
-        public ResInfo(Long idReservation, Integer nbPassager,
+        public ResInfo(Long idReservation, String idClient, Integer nbPassager,
                        String nomHotel, Double distanceKm) {
             this.idReservation = idReservation;
+            this.idClient      = idClient;
             this.nbPassager    = nbPassager;
             this.nomHotel      = nomHotel;
             this.distanceKm    = distanceKm;
         }
 
         public Long    getIdReservation() { return idReservation; }
+        public String  getIdClient()      { return idClient; }
         public Integer getNbPassager()    { return nbPassager; }
         public String  getNomHotel()      { return nomHotel; }
         public Double  getDistanceKm()    { return distanceKm; }
