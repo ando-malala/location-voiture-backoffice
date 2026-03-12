@@ -1,5 +1,6 @@
 package com.s5.framework.dev.services;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,26 @@ public class DistanceService {
     @Autowired
     public DistanceService(DistanceRepository distanceRepository) {
         this.distanceRepository = distanceRepository;
+    }
+
+    public List<Distance> findAll() {
+        return distanceRepository.findAll();
+    }
+
+    public Optional<Distance> findById(Long id) {
+        return distanceRepository.findById(id);
+    }
+
+    public Distance create(Distance distance) {
+        return distanceRepository.save(distance);
+    }
+
+    public Distance update(Distance distance) {
+        return distanceRepository.save(distance);
+    }
+
+    public void deleteById(Long id) {
+        distanceRepository.deleteById(id);
     }
 
     /**

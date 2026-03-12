@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paramètres — Back-Office</title>
+    <th:block th:replace="~{fragments/sidebar :: sidebarStyles}"></th:block>
+</head>
+<body>
+
+<th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+
+<main class="main-content">
+    <div class="page-title">⚙️ Paramètres</div>
+    <div class="page-subtitle">Gestion des paramètres de configuration (vitesse, temps d'attente…)</div>
+
+    <div class="content-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <span style="font-weight:600; color:#374151;">Liste des paramètres (<span th:text="${#lists.size(parametres)}">0</span>)</span>
+            <a th:href="@{/parametres/new}" class="btn-action btn-primary-action">+ Nouveau paramètre</a>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Libellé</th>
+                    <th>Valeur</th>
+                    <th>Unité</th>
+                    <th style="text-align:center;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="p : ${parametres}">
+                    <td th:text="${p.id}"></td>
+                    <td th:text="${p.libelle}"></td>
+                    <td th:text="${p.valeur}"></td>
+                    <td th:text="${p.unite != null ? p.unite.libelle : '-'}"></td>
+                    <td style="text-align:center; display:flex; gap:8px; justify-content:center;">
+                        <a th:href="@{/parametres/edit/{id}(id=${p.id})}" class="btn-action btn-warning-action">✏️ Modifier</a>
+                        <form th:action="@{/parametres/delete/{id}(id=${p.id})}" method="post"
+                              onsubmit="return confirm('Supprimer ce paramètre ?')">
+                            <button type="submit" class="btn-action btn-danger-action">🗑️ Supprimer</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(parametres)}">
+                    <td colspan="5" style="text-align:center; color:#9ca3af; padding:32px;">Aucun paramètre enregistré.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+</body>
+</html>

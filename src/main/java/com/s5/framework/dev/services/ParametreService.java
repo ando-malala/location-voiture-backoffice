@@ -1,5 +1,6 @@
 package com.s5.framework.dev.services;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,30 @@ public class ParametreService {
         this.parametreRepository = parametreRepository;
     }
 
+    public List<Parametre> findAll() {
+        return parametreRepository.findAll();
+    }
+
+    public Optional<Parametre> findById(Long id) {
+        return parametreRepository.findById(id);
+    }
+
+    public Parametre create(Parametre parametre) {
+        return parametreRepository.save(parametre);
+    }
+
+    public Parametre update(Parametre parametre) {
+        return parametreRepository.save(parametre);
+    }
+
+    public void deleteById(Long id) {
+        parametreRepository.deleteById(id);
+    }
+
+    public Optional<Parametre> findByLibelle(String libelle) {
+        return parametreRepository.findByLibelle(libelle);
+    }
+
     /**
      * Récupère la vitesse moyenne (en km/h).
      */
@@ -36,9 +61,5 @@ public class ParametreService {
         return parametreRepository.findByLibelle("Temps d attente")
                 .map(Parametre::getValeur)
                 .orElseThrow(() -> new RuntimeException("Paramètre 'Temps d attente' non trouvé en base"));
-    }
-
-    public Optional<Parametre> findByLibelle(String libelle) {
-        return parametreRepository.findByLibelle(libelle);
     }
 }

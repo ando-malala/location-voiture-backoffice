@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifier Distance — Back-Office</title>
+    <th:block th:replace="~{fragments/sidebar :: sidebarStyles}"></th:block>
+</head>
+<body>
+
+<th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+
+<main class="main-content">
+    <div class="page-title">✏️ Modifier la Distance #<span th:text="${distance.id}"></span></div>
+    <div class="page-subtitle">Mettre à jour les informations de la distance</div>
+
+    <div class="form-card">
+        <form method="post" th:action="@{/distances/update}">
+            <input type="hidden" name="id" th:value="${distance.id}">
+
+            <div class="form-group">
+                <label for="hotelDepartId">Hôtel Départ</label>
+                <select id="hotelDepartId" name="hotelDepartId" required>
+                    <option th:each="h : ${hostels}"
+                            th:value="${h.id}"
+                            th:text="${h.nom}"
+                            th:selected="${distance.hotelDepart != null and distance.hotelDepart.id == h.id}">
+                    </option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="hotelArriveeId">Hôtel Arrivée</label>
+                <select id="hotelArriveeId" name="hotelArriveeId" required>
+                    <option th:each="h : ${hostels}"
+                            th:value="${h.id}"
+                            th:text="${h.nom}"
+                            th:selected="${distance.hotelArrivee != null and distance.hotelArrivee.id == h.id}">
+                    </option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="distanceKm">Distance (km)</label>
+                <input type="number" id="distanceKm" name="distanceKm" step="0.1" min="0"
+                       th:value="${distance.distanceKm}" required>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:24px;">
+                <button type="submit" class="btn-action btn-primary-action">💾 Mettre à jour</button>
+                <a th:href="@{/distances}" class="btn-action btn-secondary-action">← Annuler</a>
+            </div>
+        </form>
+    </div>
+</main>
+
+</body>
+</html>

@@ -55,6 +55,22 @@
             </a>
         </li>
 
+        <li>
+            <a th:href="@{/distances}"
+               th:class="${activePage == 'distances'} ? 'active' : ''">
+                <span class="menu-icon">📍</span>
+                <span>Distances</span>
+            </a>
+        </li>
+
+        <li>
+            <a th:href="@{/parametres}"
+               th:class="${activePage == 'parametres'} ? 'active' : ''">
+                <span class="menu-icon">⚙️</span>
+                <span>Paramètres</span>
+            </a>
+        </li>
+
         <li class="menu-section-title mt-3">API REST</li>
 
         <li>
