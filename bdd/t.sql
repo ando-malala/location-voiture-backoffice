@@ -39,3 +39,13 @@ INSERT INTO reservation(idHotel, idClient, nbPassager, dateHeure) VALUES
 (2, 'client4', 1,  '2026-03-12 09:00'),
 (2, 'client5', 2,  '2026-03-12 09:00'),
 (2, 'client5', 20,  '2026-03-12 09:00');
+
+
+INSERT INTO reservation(idHotel, idClient, nbPassager, dateHeure) VALUES
+(2, 'client6', 1, '2026-03-13 09:00'),
+(2, 'client5', 1, '2026-03-13 09:20'),
+(2, 'client4', 1, '2026-03-13 09:40'),
+(2, 'client3', 1, '2026-03-13 09:50');
+
+INSERT INTO reservation(idHotel, idClient, nbPassager, dateHeure) VALUES
+(2, 'client6', 20, '2026-03-13 09:00');
