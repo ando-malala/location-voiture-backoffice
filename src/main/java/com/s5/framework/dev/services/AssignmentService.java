@@ -4,8 +4,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -28,7 +28,11 @@ import com.s5.framework.dev.repositories.VehiculeRepository;
  * <h3>Règles d'assignation — résumé</h3>
  * <ol>
  *   <li>Les réservations sont triées par date-heure croissante, puis regroupées
- *       par créneau identique ({@code dateHeure}).</li>
+ *       par fenêtres temporelles basées sur le paramètre métier "Temps d attente"
+ *       (en minutes).
+ *       <br>Chaque groupe démarre à la première réservation non traitée, puis inclut
+ *       toutes les réservations dont {@code dateHeure} est dans
+ *       [{@code dateHeurePremiere}, {@code dateHeurePremiere + tempsAttente}].</li>
  *   <li>À l'intérieur d'un groupe (même créneau), les réservations sont triées par
  *       {@code nbPassager} <strong>décroissant</strong> : la plus grande est traitée
  *       en priorité.</li>
@@ -44,10 +48,19 @@ import com.s5.framework.dev.repositories.VehiculeRepository;
  *       </ul>
  *   </li>
  *   <li>Sélection du véhicule : capacité minimale suffisante → priorité Diesel → aléatoire.</li>
- *   <li>Un véhicule déjà utilisé dans la simulation ne peut plus être assigné.</li>
+ *   <li>Disponibilité véhicule par groupe :
+ *       <ul>
+ *         <li>Si un véhicule n'a jamais été assigné, il est disponible.</li>
+ *         <li>Si un véhicule est déjà assigné, il redevient disponible pour le groupe courant
+ *             si son heure de retour est ≤ fin de la fenêtre du groupe
+ *             ({@code premiereReservation + tempsAttente}).</li>
+ *       </ul>
+ *   </li>
  *   <li>Pour un trajet combiné, la voiture visite les hôtels <strong>du plus proche
  *       au plus éloigné</strong> de l'aéroport ; le temps de retour est calculé sur
  *       l'intégralité du trajet multi-stops.</li>
+ *   <li>Heure de départ d'un trajet :
+ *       {@code max(dernière réservation assignée du groupe, heure de retour précédente du véhicule)}.</li>
  * </ol>
  *
  * Aucune donnée n'est écrite en base.
@@ -100,6 +113,38 @@ public class AssignmentService {
         }
     }
 
+    /** Historique d'affectation d'un véhicule. */
+    private static class AffectationVehicule {
+        final LocalDateTime depart;
+        final LocalDateTime retour;
+
+        AffectationVehicule(LocalDateTime depart, LocalDateTime retour) {
+            this.depart = depart;
+            this.retour = retour;
+        }
+    }
+
+    /** Trajet préparé pendant le traitement d'un groupe (finalisé après calcul du départ groupe). */
+    private static class TrajetPrepare {
+        final Vehicule vehicule;
+        final List<Planning.ResInfo> resInfos;
+        final boolean combined;
+        final List<String> routeHotels;
+        final long tempsTrajetMin;
+
+        TrajetPrepare(Vehicule vehicule,
+                      List<Planning.ResInfo> resInfos,
+                      boolean combined,
+                      List<String> routeHotels,
+                      long tempsTrajetMin) {
+            this.vehicule = vehicule;
+            this.resInfos = resInfos;
+            this.combined = combined;
+            this.routeHotels = routeHotels;
+            this.tempsTrajetMin = tempsTrajetMin;
+        }
+    }
+
     // ------------------------------------------------------------------ //
     //  Main entry-point                                                    //
     // ------------------------------------------------------------------ //
@@ -117,32 +162,60 @@ public class AssignmentService {
 
         /* 2 — Paramètres */
         int vitesseMoyenne = parametreService.getVitesseMoyenne(); // km/h
+        int tempsAttente = parametreService.getTempsAttente(); // minutes
+        if (tempsAttente < 0) {
+            throw new RuntimeException("Le paramètre 'Temps d attente' doit être >= 0 minute.");
+        }
+
         List<Vehicule> tousVehicules = vehiculeRepository.findAll();
         Hostel aeroport = hostelRepository.findById(1L)
                 .orElseThrow(() -> new RuntimeException("Hôtel aéroport (id=1) non trouvé en base."));
 
-        /* 3 — Regrouper par créneau (dateHeure identique) en conservant l'ordre */
-        Map<LocalDateTime, List<Reservation>> groupes = reservations.stream()
-                .collect(Collectors.groupingBy(
-                        Reservation::getDateHeure,
-                        LinkedHashMap::new,
-                        Collectors.toList()));
+        /* 3 — Regrouper par fenêtres [première réservation ; +tempsAttente] */
+        List<List<Reservation>> groupes = new ArrayList<>();
+        int indexReservation = 0;
+        while (indexReservation < reservations.size()) {
+            Reservation premiere = reservations.get(indexReservation);
+            LocalDateTime debutFenetre = premiere.getDateHeure();
+            LocalDateTime finFenetre = debutFenetre.plusMinutes(tempsAttente);
+
+            List<Reservation> groupe = new ArrayList<>();
+            while (indexReservation < reservations.size()) {
+                Reservation courante = reservations.get(indexReservation);
+                if (courante.getDateHeure().isAfter(finFenetre)) {
+                    break;
+                }
+                groupe.add(courante);
+                indexReservation++;
+            }
+            groupes.add(groupe);
+        }
 
         List<Planning> assigned = new ArrayList<>();
         List<Reservation> unassigned = new ArrayList<>();
-        Set<Long> vehiculesUtilises = new HashSet<>();
+        Map<Long, AffectationVehicule> vehiculesAssignes = new HashMap<>();
         Random random = new Random();
 
         /* 4 — Traiter chaque créneau */
-        for (Map.Entry<LocalDateTime, List<Reservation>> entry : groupes.entrySet()) {
-            LocalDateTime creneau = entry.getKey();
+        for (List<Reservation> reservationsFenetre : groupes) {
+            LocalDateTime creneau = reservationsFenetre.get(0).getDateHeure();
+            LocalDateTime finFenetre = creneau.plusMinutes(tempsAttente);
+
+            List<Vehicule> vehiculesDisponibles = getVehiculesDisponiblesPourGroupe(
+                    tousVehicules,
+                    vehiculesAssignes,
+                    finFenetre);
+
+            Set<Long> vehiculesUtilisesDansGroupe = new HashSet<>();
 
             /* Trier par nbPassager décroissant : priorité au plus grand groupe */
-            List<Reservation> groupe = entry.getValue().stream()
+            List<Reservation> groupe = reservationsFenetre.stream()
                     .sorted(Comparator.comparingInt(Reservation::getNbPassager).reversed())
                     .collect(Collectors.toList());
 
             Set<Long> dejaPrisEnCharge = new HashSet<>();
+                List<Reservation> reservationsAssigneesDuGroupe = new ArrayList<>();
+                List<TrajetPrepare> trajetsPrepares = new ArrayList<>();
 
             for (int i = 0; i < groupe.size(); i++) {
                 Reservation principale = groupe.get(i);
@@ -160,7 +233,7 @@ public class AssignmentService {
 
                 /* Essayer d'abord le trajet combiné maximal, puis réduire si nécessaire */
                 TrajetAssigne resultat = tenteCombine(
-                        candidatesTrajet, tousVehicules, vehiculesUtilises, random);
+                    candidatesTrajet, vehiculesDisponibles, vehiculesUtilisesDansGroupe, random);
 
                 if (resultat == null) {
                     // Aucun véhicule même pour la seule réservation principale
@@ -171,7 +244,7 @@ public class AssignmentService {
 
                 List<Reservation> trajet = resultat.trajet;
                 Vehicule choisi = resultat.vehicule;
-                vehiculesUtilises.add(choisi.getId());
+                vehiculesUtilisesDansGroupe.add(choisi.getId());
 
                 /* Construire la route : hotels triés par distance croissante depuis l'aéroport */
                 List<Reservation> routeOrdonnee = trajet.stream()
@@ -181,7 +254,6 @@ public class AssignmentService {
 
                 /* Calculer le temps du trajet multi-stops */
                 long tempsTrajetMin = calculerTempsTrajet(routeOrdonnee, aeroport, vitesseMoyenne);
-                LocalDateTime retour = creneau.plusMinutes(tempsTrajetMin);
 
                 /* Noms des hôtels dans l'ordre de visite (pour affichage) */
                 List<String> routeHotels = routeOrdonnee.stream()
@@ -199,13 +271,48 @@ public class AssignmentService {
                                 distanceService.getDistanceKm(aeroport.getId(), r.getHotel().getId())))
                         .collect(Collectors.toList());
 
-                /* Un seul Planning par trajet (qu'il soit simple ou combiné) */
-                Planning row = new Planning(resInfos, creneau, retour, choisi, combined, routeHotels);
-                assigned.add(row);
+                        trajetsPrepares.add(new TrajetPrepare(
+                            choisi,
+                            resInfos,
+                            combined,
+                            routeHotels,
+                            tempsTrajetMin));
+
+                        reservationsAssigneesDuGroupe.addAll(trajet);
 
                 /* Marquer toutes les réservations du trajet comme traitées */
                 for (Reservation res : trajet) {
                     dejaPrisEnCharge.add(res.getId());
+                }
+            }
+
+            if (!trajetsPrepares.isEmpty()) {
+                LocalDateTime derniereReservationAssigneeDuGroupe = reservationsAssigneesDuGroupe.stream()
+                        .map(Reservation::getDateHeure)
+                        .max(LocalDateTime::compareTo)
+                        .orElseThrow(() -> new RuntimeException("Aucune réservation assignée dans le groupe"));
+
+                for (TrajetPrepare trajetPrepare : trajetsPrepares) {
+                    AffectationVehicule affectationPrecedente = vehiculesAssignes.get(trajetPrepare.vehicule.getId());
+
+                    LocalDateTime departTrajet = derniereReservationAssigneeDuGroupe;
+                    if (affectationPrecedente != null && affectationPrecedente.retour.isAfter(departTrajet)) {
+                        departTrajet = affectationPrecedente.retour;
+                    }
+
+                    LocalDateTime retour = departTrajet.plusMinutes(trajetPrepare.tempsTrajetMin);
+                    Planning row = new Planning(
+                            trajetPrepare.resInfos,
+                            departTrajet,
+                            retour,
+                            trajetPrepare.vehicule,
+                            trajetPrepare.combined,
+                            trajetPrepare.routeHotels);
+                    assigned.add(row);
+
+                    vehiculesAssignes.put(
+                            trajetPrepare.vehicule.getId(),
+                            new AffectationVehicule(departTrajet, retour));
                 }
             }
         }
@@ -228,14 +335,14 @@ public class AssignmentService {
      * Retourne {@code null} si aucun véhicule n'est disponible pour la principale.
      */
     private TrajetAssigne tenteCombine(List<Reservation> candidates,
-                                       List<Vehicule> tousVehicules,
-                                       Set<Long> vehiculesUtilises,
+                                       List<Vehicule> vehiculesDisponibles,
+                                       Set<Long> vehiculesUtilisesDansGroupe,
                                        Random random) {
         Reservation principale = candidates.get(0);
 
         /* 1 — Chercher le véhicule le mieux adapté à la réservation principale seule */
         Vehicule vehiculePrincipal = choisirVehicule(
-                tousVehicules, vehiculesUtilises, principale.getNbPassager(), random);
+                vehiculesDisponibles, vehiculesUtilisesDansGroupe, principale.getNbPassager(), random);
 
         if (vehiculePrincipal == null) {
             return null; // aucun véhicule disponible, même pour la principale
@@ -270,12 +377,12 @@ public class AssignmentService {
      * Critères : capacité minimale suffisante → priorité Diesel → aléatoire.
      * Retourne {@code null} si aucun véhicule valide n'est disponible.
      */
-    private Vehicule choisirVehicule(List<Vehicule> tousVehicules,
-                                     Set<Long> vehiculesUtilises,
+        private Vehicule choisirVehicule(List<Vehicule> vehiculesDisponibles,
+                         Set<Long> vehiculesUtilisesDansGroupe,
                                      int nbPassager,
                                      Random random) {
-        List<Vehicule> candidats = tousVehicules.stream()
-                .filter(v -> !vehiculesUtilises.contains(v.getId()))
+        List<Vehicule> candidats = vehiculesDisponibles.stream()
+            .filter(v -> !vehiculesUtilisesDansGroupe.contains(v.getId()))
                 .filter(v -> v.getCapacite() >= nbPassager)
                 .collect(Collectors.toList());
 
@@ -294,6 +401,27 @@ public class AssignmentService {
 
         if (!diesels.isEmpty()) return diesels.get(random.nextInt(diesels.size()));
         return plusPetits.get(random.nextInt(plusPetits.size()));
+    }
+
+    /**
+     * Retourne les véhicules disponibles pour un groupe.
+     *
+     * <p>Règle:
+     * - jamais assigné => disponible
+     * - déjà assigné => disponible si heure de retour <= finFenetreGroupe</p>
+     */
+    private List<Vehicule> getVehiculesDisponiblesPourGroupe(List<Vehicule> tousVehicules,
+                                                              Map<Long, AffectationVehicule> vehiculesAssignes,
+                                                              LocalDateTime finFenetreGroupe) {
+        return tousVehicules.stream()
+                .filter(v -> {
+                    AffectationVehicule affectation = vehiculesAssignes.get(v.getId());
+                    if (affectation == null) {
+                        return true;
+                    }
+                    return !affectation.retour.isAfter(finFenetreGroupe);
+                })
+                .collect(Collectors.toList());
     }
 
     /**
