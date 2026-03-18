@@ -14,12 +14,16 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.google.gson.Gson;
 import com.s5.framework.dev.models.Hostel;
+import com.s5.framework.dev.models.Planification;
 import com.s5.framework.dev.models.Planning;
 import com.s5.framework.dev.models.Reservation;
 import com.s5.framework.dev.models.Vehicule;
 import com.s5.framework.dev.repositories.HostelRepository;
+import com.s5.framework.dev.repositories.PlanificationRepository;
 import com.s5.framework.dev.repositories.VehiculeRepository;
 
 /**
@@ -47,7 +51,8 @@ import com.s5.framework.dev.repositories.VehiculeRepository;
  *             non assignée.</li>
  *       </ul>
  *   </li>
- *   <li>Sélection du véhicule : capacité minimale suffisante → priorité Diesel → aléatoire.</li>
+ *   <li>Sélection du véhicule : capacité minimale suffisante → nombre de trajets du jour
+ *       le plus faible → priorité Diesel → aléatoire.</li>
  *   <li>Disponibilité véhicule par groupe :
  *       <ul>
  *         <li>Si un véhicule n'a jamais été assigné, il est disponible.</li>
@@ -63,28 +68,33 @@ import com.s5.framework.dev.repositories.VehiculeRepository;
  *       {@code max(dernière réservation assignée du groupe, heure de retour précédente du véhicule)}.</li>
  * </ol>
  *
- * Aucune donnée n'est écrite en base.
+ * La planification du jour est persistée en base (table {@code planification}).
  */
 @Service
 public class AssignmentService {
 
     private final VehiculeRepository vehiculeRepository;
     private final HostelRepository hostelRepository;
+    private final PlanificationRepository planificationRepository;
     private final DistanceService distanceService;
     private final ParametreService parametreService;
     private final ReservationService reservationService;
+    private final Gson gson;
 
     @Autowired
     public AssignmentService(VehiculeRepository vehiculeRepository,
                              HostelRepository hostelRepository,
+                             PlanificationRepository planificationRepository,
                              DistanceService distanceService,
                              ParametreService parametreService,
                              ReservationService reservationService) {
         this.vehiculeRepository = vehiculeRepository;
         this.hostelRepository = hostelRepository;
+        this.planificationRepository = planificationRepository;
         this.distanceService = distanceService;
         this.parametreService = parametreService;
         this.reservationService = reservationService;
+        this.gson = new Gson();
     }
 
     // ------------------------------------------------------------------ //
@@ -152,6 +162,7 @@ public class AssignmentService {
     /**
      * Simule l'assignation de véhicules pour toutes les réservations d'une date donnée.
      */
+    @Transactional
     public SimulationResult simuler(LocalDate date) {
 
         /* 1 — Récupérer les réservations du jour, triées par heure */
@@ -194,7 +205,11 @@ public class AssignmentService {
         List<Planning> assigned = new ArrayList<>();
         List<Reservation> unassigned = new ArrayList<>();
         Map<Long, AffectationVehicule> vehiculesAssignes = new HashMap<>();
+        Map<Long, Long> trajetsParVehiculeDuJour = new HashMap<>();
         Random random = new Random();
+
+        // Recalcule la planification de la date demandée (un seul snapshot par journée).
+        planificationRepository.deleteByDateJour(date);
 
         /* 4 — Traiter chaque créneau */
         for (List<Reservation> reservationsFenetre : groupes) {
@@ -233,7 +248,12 @@ public class AssignmentService {
 
                 /* Essayer d'abord le trajet combiné maximal, puis réduire si nécessaire */
                 TrajetAssigne resultat = tenteCombine(
-                    candidatesTrajet, vehiculesDisponibles, vehiculesUtilisesDansGroupe, random);
+                    candidatesTrajet,
+                    vehiculesDisponibles,
+                    vehiculesUtilisesDansGroupe,
+                    random,
+                    date,
+                    trajetsParVehiculeDuJour);
 
                 if (resultat == null) {
                     // Aucun véhicule même pour la seule réservation principale
@@ -245,6 +265,7 @@ public class AssignmentService {
                 List<Reservation> trajet = resultat.trajet;
                 Vehicule choisi = resultat.vehicule;
                 vehiculesUtilisesDansGroupe.add(choisi.getId());
+                trajetsParVehiculeDuJour.merge(choisi.getId(), 1L, Long::sum);
 
                 /* Construire la route : hotels triés par distance croissante depuis l'aéroport */
                 List<Reservation> routeOrdonnee = trajet.stream()
@@ -271,14 +292,14 @@ public class AssignmentService {
                                 distanceService.getDistanceKm(aeroport.getId(), r.getHotel().getId())))
                         .collect(Collectors.toList());
 
-                        trajetsPrepares.add(new TrajetPrepare(
-                            choisi,
-                            resInfos,
-                            combined,
-                            routeHotels,
-                            tempsTrajetMin));
+                    trajetsPrepares.add(new TrajetPrepare(
+                        choisi,
+                        resInfos,
+                        combined,
+                        routeHotels,
+                        tempsTrajetMin));
 
-                        reservationsAssigneesDuGroupe.addAll(trajet);
+                    reservationsAssigneesDuGroupe.addAll(trajet);
 
                 /* Marquer toutes les réservations du trajet comme traitées */
                 for (Reservation res : trajet) {
@@ -310,6 +331,16 @@ public class AssignmentService {
                             trajetPrepare.routeHotels);
                     assigned.add(row);
 
+                    Planification persisted = new Planification(
+                            date,
+                            departTrajet,
+                            retour,
+                            trajetPrepare.vehicule,
+                            trajetPrepare.combined,
+                            gson.toJson(trajetPrepare.resInfos),
+                            gson.toJson(trajetPrepare.routeHotels));
+                    planificationRepository.save(persisted);
+
                     vehiculesAssignes.put(
                             trajetPrepare.vehicule.getId(),
                             new AffectationVehicule(departTrajet, retour));
@@ -337,12 +368,19 @@ public class AssignmentService {
     private TrajetAssigne tenteCombine(List<Reservation> candidates,
                                        List<Vehicule> vehiculesDisponibles,
                                        Set<Long> vehiculesUtilisesDansGroupe,
-                                       Random random) {
+                                       Random random,
+                                       LocalDate date,
+                                       Map<Long, Long> trajetsParVehiculeDuJour) {
         Reservation principale = candidates.get(0);
 
         /* 1 — Chercher le véhicule le mieux adapté à la réservation principale seule */
         Vehicule vehiculePrincipal = choisirVehicule(
-                vehiculesDisponibles, vehiculesUtilisesDansGroupe, principale.getNbPassager(), random);
+                vehiculesDisponibles,
+                vehiculesUtilisesDansGroupe,
+                principale.getNbPassager(),
+                random,
+                date,
+                trajetsParVehiculeDuJour);
 
         if (vehiculePrincipal == null) {
             return null; // aucun véhicule disponible, même pour la principale
@@ -374,15 +412,18 @@ public class AssignmentService {
 
     /**
      * Choisit le meilleur véhicule disponible pour {@code nbPassager} passagers.
-     * Critères : capacité minimale suffisante → priorité Diesel → aléatoire.
+     * Critères : capacité minimale suffisante -> nb de trajets du jour minimal
+     * -> priorité Diesel -> aléatoire.
      * Retourne {@code null} si aucun véhicule valide n'est disponible.
      */
-        private Vehicule choisirVehicule(List<Vehicule> vehiculesDisponibles,
-                         Set<Long> vehiculesUtilisesDansGroupe,
+    private Vehicule choisirVehicule(List<Vehicule> vehiculesDisponibles,
+                                     Set<Long> vehiculesUtilisesDansGroupe,
                                      int nbPassager,
-                                     Random random) {
+                                     Random random,
+                                     LocalDate date,
+                                     Map<Long, Long> trajetsParVehiculeDuJour) {
         List<Vehicule> candidats = vehiculesDisponibles.stream()
-            .filter(v -> !vehiculesUtilisesDansGroupe.contains(v.getId()))
+                .filter(v -> !vehiculesUtilisesDansGroupe.contains(v.getId()))
                 .filter(v -> v.getCapacite() >= nbPassager)
                 .collect(Collectors.toList());
 
@@ -395,12 +436,36 @@ public class AssignmentService {
 
         if (plusPetits.size() == 1) return plusPetits.get(0);
 
-        List<Vehicule> diesels = plusPetits.stream()
+        long minNbTrajets = plusPetits.stream()
+                .mapToLong(v -> getNbTrajetsDuJour(v.getId(), date, trajetsParVehiculeDuJour))
+                .min()
+                .orElse(0L);
+
+        List<Vehicule> moinsUtilises = plusPetits.stream()
+                .filter(v -> getNbTrajetsDuJour(v.getId(), date, trajetsParVehiculeDuJour) == minNbTrajets)
+                .collect(Collectors.toList());
+
+        if (moinsUtilises.size() == 1) return moinsUtilises.get(0);
+
+        List<Vehicule> diesels = moinsUtilises.stream()
                 .filter(v -> "Diesel".equalsIgnoreCase(v.getTypeCarburant().getLibelle()))
                 .collect(Collectors.toList());
 
         if (!diesels.isEmpty()) return diesels.get(random.nextInt(diesels.size()));
-        return plusPetits.get(random.nextInt(plusPetits.size()));
+        return moinsUtilises.get(random.nextInt(moinsUtilises.size()));
+    }
+
+    private long getNbTrajetsDuJour(Long idVehicule,
+                                    LocalDate date,
+                                    Map<Long, Long> trajetsParVehiculeDuJour) {
+        Long inMemory = trajetsParVehiculeDuJour.get(idVehicule);
+        if (inMemory != null) {
+            return inMemory;
+        }
+
+        long depuisBase = planificationRepository.countByDateJourAndVehicule_Id(date, idVehicule);
+        trajetsParVehiculeDuJour.put(idVehicule, depuisBase);
+        return depuisBase;
     }
 
     /**
