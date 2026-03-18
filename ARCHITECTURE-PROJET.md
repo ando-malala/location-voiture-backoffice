@@ -119,3 +119,4 @@ Fichiers sensibles/legacy:
   - Simplification du jeu de données `bdd/test_disponibilite_vehicules_fenetre.sql` avec paramètres homogènes (60 km/h, 30 km) pour des validations plus simples des règles de départ/retour.
   - Ajustement de la logique de départ groupe: référence à la dernière réservation assignée (pas seulement présente dans l'intervalle).
   - Ajustement final de la règle de départ: `depart = max(dernière réservation assignée du groupe, retour précédent du véhicule)`.
+  - Ajout d'un document de synthèse fonctionnelle: `RESUME-PLANIFICATION-ASSIGNATION.md`.

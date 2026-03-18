@@ -55,7 +55,17 @@ create table reservation (
     FOREIGN KEY (idHotel) REFERENCES hotel(id)
 );
 
--- La planification est calculée dynamiquement (simulation), pas stockée en base.
+create table planification (
+    id serial primary key,
+    dateJour date not null,
+    dateHeureDepart timestamp not null,
+    dateHeureRetour timestamp not null,
+    idVehicule int not null,
+    combinedTrip boolean not null default false,
+    reservationsJson text,
+    routeHotelsJson text,
+    foreign key (idVehicule) references vehicule(id)
+);
 
 create table planification_assigne(
 

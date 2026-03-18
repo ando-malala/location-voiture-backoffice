@@ -174,3 +174,4 @@ Contrôleur: `PlanningViewController` (`/planification`)
   - Simplification du dataset `bdd/test_disponibilite_vehicules_fenetre.sql`: vitesse fixe 60 km/h et distances homogènes 30 km pour des trajets d'1 heure plus lisibles.
   - Correction règle d'heure de départ: calcul basé sur la dernière réservation assignée du groupe (et non la dernière réservation simplement présente dans la fenêtre).
   - Nouvelle règle de départ appliquée: pour chaque trajet, départ = max(dernière réservation assignée du groupe, retour précédent du véhicule).
+  - Ajout du document de synthèse: `RESUME-PLANIFICATION-ASSIGNATION.md`.
