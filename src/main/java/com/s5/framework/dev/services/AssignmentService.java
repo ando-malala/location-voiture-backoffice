@@ -204,6 +204,7 @@ public class AssignmentService {
 
         List<Planning> assigned = new ArrayList<>();
         List<Reservation> unassigned = new ArrayList<>();
+        List<Reservation> reservationsEnAttente = new ArrayList<>();
         Map<Long, AffectationVehicule> vehiculesAssignes = new HashMap<>();
         Map<Long, Long> trajetsParVehiculeDuJour = new HashMap<>();
         Random random = new Random();
@@ -223,14 +224,26 @@ public class AssignmentService {
 
             Set<Long> vehiculesUtilisesDansGroupe = new HashSet<>();
 
+            // Reporter les non assignées précédentes dans le groupe courant (sans re-fenetrage par heure).
+            List<Reservation> candidatesDuGroupe = new ArrayList<>(reservationsEnAttente);
+            Set<Long> idsCandidates = candidatesDuGroupe.stream()
+                    .map(Reservation::getId)
+                    .collect(Collectors.toSet());
+            for (Reservation reservationFenetre : reservationsFenetre) {
+                if (!idsCandidates.contains(reservationFenetre.getId())) {
+                    candidatesDuGroupe.add(reservationFenetre);
+                }
+            }
+
             /* Trier par nbPassager décroissant : priorité au plus grand groupe */
-            List<Reservation> groupe = reservationsFenetre.stream()
+            List<Reservation> groupe = candidatesDuGroupe.stream()
                     .sorted(Comparator.comparingInt(Reservation::getNbPassager).reversed())
                     .collect(Collectors.toList());
 
             Set<Long> dejaPrisEnCharge = new HashSet<>();
-                List<Reservation> reservationsAssigneesDuGroupe = new ArrayList<>();
-                List<TrajetPrepare> trajetsPrepares = new ArrayList<>();
+            List<Reservation> reservationsAssigneesDuGroupe = new ArrayList<>();
+            List<Reservation> nonAssigneesCeGroupe = new ArrayList<>();
+            List<TrajetPrepare> trajetsPrepares = new ArrayList<>();
 
             for (int i = 0; i < groupe.size(); i++) {
                 Reservation principale = groupe.get(i);
@@ -256,8 +269,8 @@ public class AssignmentService {
                     trajetsParVehiculeDuJour);
 
                 if (resultat == null) {
-                    // Aucun véhicule même pour la seule réservation principale
-                    unassigned.add(principale);
+                    // Aucun véhicule pour ce groupe : la réservation est reportée au groupe suivant.
+                    nonAssigneesCeGroupe.add(principale);
                     dejaPrisEnCharge.add(principale.getId());
                     continue;
                 }
@@ -346,7 +359,13 @@ public class AssignmentService {
                             new AffectationVehicule(departTrajet, retour));
                 }
             }
+
+            // Les non assignées du groupe courant seront réessayées sur le prochain groupe.
+            reservationsEnAttente = nonAssigneesCeGroupe;
         }
+
+        // Après le dernier groupe, les réservations restantes en attente deviennent définitivement non assignées.
+        unassigned.addAll(reservationsEnAttente);
 
         return new SimulationResult(assigned, unassigned);
     }

@@ -18,11 +18,16 @@ RESTART IDENTITY CASCADE;
 -- Lieux
 INSERT INTO hotel(nom) VALUES
 ('Aeroport'),
-('Hotel Test');
+('Hotel Test'),
+('Hotel Test 2');
 
 INSERT INTO distance(idLieuDepart, idLieuArrivee, distanceKm) VALUES
-(1, 2, 10),
-(2, 1, 10);
+(1, 2, 60),
+(2, 1, 60),
+(1, 3, 240),
+(3, 1, 240),
+(2, 3, 80),
+(3, 2, 80);
 
 -- Referentiels
 INSERT INTO typecarburant(libelle) VALUES
@@ -42,21 +47,22 @@ INSERT INTO parametre(libelle, valeur, idUnite) VALUES
 INSERT INTO vehicule(reference, capacite, typecarburantid) VALUES
 ('V5-DIESEL', 5, 1),
 ('V5-ESSENCE', 5, 2),
-('V8-DIESEL', 8, 1);
-
--- SCENARIO A : diesel prioritaire (comptes egaux a 0)
--- Date a tester dans l'UI: 2026-03-20
-INSERT INTO reservation(idHotel, idClient, nbPassager, dateHeure) VALUES
-(2, 'A-CLIENT-1', 4, '2026-03-20 09:00:00');
+('V25-ESSENCE', 25, 2);
 
 -- SCENARIO B : nb de trajets prioritaire avant diesel (dans la meme planification)
 -- Date a tester dans l'UI: 2026-03-21
 -- 1ere reservation (09:00) => V5-DIESEL (comptes egaux)
 -- 2e reservation (10:00) => V5-ESSENCE (moins de trajets que le diesel ce jour-la)
 INSERT INTO reservation(idHotel, idClient, nbPassager, dateHeure) VALUES
-(2, 'B-CLIENT-1', 4, '2026-03-21 09:00:00'),
-(2, 'B-CLIENT-2', 4, '2026-03-21 10:00:00');
+(3, 'B-CLIENT-1', 25, '2026-03-21 10:00:00'),
+(3, 'B-CLIENT-2', 4, '2026-03-21 10:20:00'),
+(3, 'B-CLIENT-3', 25, '2026-03-21 10:40:00');
 
 INSERT INTO reservation(idHotel, idClient, nbPassager, dateHeure) VALUES
-(2, 'C-CLIENT-1', 4, '2026-03-21 11:00:00'),
-(2, 'C-CLIENT-2', 4, '2026-03-21 11:25:00');
+(2, 'C-CLIENT-1', 1, '2026-03-21 14:00:00'),
+(2, 'C-CLIENT-2', 4, '2026-03-21 14:25:00');
+
+INSERT INTO reservation(idHotel, idClient, nbPassager, dateHeure) VALUES
+(2, 'D-CLIENT-1', 1, '2026-03-21 20:00:00'),
+(2, 'D-CLIENT-2', 4, '2026-03-21 20:25:00');
+
