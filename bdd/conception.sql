@@ -1,6 +1,6 @@
-CREATE DATABASE bdd_voiture;
+CREATE DATABASE bdd_voiture_copy;
 
-\c bdd_voiture;
+\c bdd_voiture_copy;
 
 -- COMMENT
 
@@ -55,19 +55,33 @@ create table reservation (
     FOREIGN KEY (idHotel) REFERENCES hotel(id)
 );
 
+
 create table planification (
     id serial primary key,
-    dateJour date not null,
-    dateHeureDepart timestamp not null,
-    dateHeureRetour timestamp not null,
-    idVehicule int not null,
-    combinedTrip boolean not null default false,
-    reservationsJson text,
-    routeHotelsJson text,
-    foreign key (idVehicule) references vehicule(id)
+    date date not null,
+    dateheuredepart timestamp not null,
+    dateheureretour timestamp not null,
+    idvehicule int not null,
+    combined boolean not null,
+    route_hotels varchar(1000),
+    foreign key (idvehicule) references vehicule(id)
 );
 
+create table planification_reservation (
+    id serial primary key,
+    planification_id int not null,
+    reservation_id int not null,
+    ordre int,
+    foreign key (planification_id) references planification(id) on delete cascade,
+    foreign key (reservation_id) references reservation(id)
+);
 
-
-  ----
+create table planification_non_assigne (
+    id serial primary key,
+    date date not null,
+    reservation_id int not null,
+    nb_passager int not null,
+    motif varchar(500),
+    foreign key (reservation_id) references reservation(id)
+);
 

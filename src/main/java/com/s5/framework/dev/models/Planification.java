@@ -2,6 +2,8 @@ package com.s5.framework.dev.models;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,11 +12,13 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 /**
- * Ligne persistée de planification d'un trajet véhicule pour une journée.
+ * Représente une planification persistée d'un trajet (1 véhicule, 1 créneau).
  */
 @Entity
 @Table(name = "planification")
@@ -24,8 +28,9 @@ public class Planification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "datejour", nullable = false)
-    private LocalDate dateJour;
+    /** Date de la planification (jour de la simulation). */
+    @Column(name = "date", nullable = false)
+    private LocalDate date;
 
     @Column(name = "dateheuredepart", nullable = false)
     private LocalDateTime dateHeureDepart;
@@ -37,48 +42,50 @@ public class Planification {
     @JoinColumn(name = "idvehicule", nullable = false)
     private Vehicule vehicule;
 
-    @Column(name = "combinedtrip", nullable = false)
-    private boolean combinedTrip;
+    @Column(name = "combined", nullable = false)
+    private boolean combined;
 
-    @Column(name = "reservationsjson", columnDefinition = "TEXT")
-    private String reservationsJson;
+    /** Liste des hôtels visités (séparés par ","). */
+    @Column(name = "route_hotels", length = 1000)
+    private String routeHotels;
 
-    @Column(name = "routehotelsjson", columnDefinition = "TEXT")
-    private String routeHotelsJson;
+    @ManyToMany
+    @JoinTable(
+            name = "planification_reservation",
+            joinColumns = @JoinColumn(name = "planification_id"),
+            inverseJoinColumns = @JoinColumn(name = "reservation_id")
+    )
+    private List<Reservation> reservations = new ArrayList<>();
 
     public Planification() {
     }
 
-    public Planification(LocalDate dateJour,
+    public Planification(LocalDate date,
                         LocalDateTime dateHeureDepart,
                         LocalDateTime dateHeureRetour,
                         Vehicule vehicule,
-                        boolean combinedTrip,
-                        String reservationsJson,
-                        String routeHotelsJson) {
-        this.dateJour = dateJour;
+                        boolean combined,
+                        String routeHotels,
+                        List<Reservation> reservations) {
+        this.date = date;
         this.dateHeureDepart = dateHeureDepart;
         this.dateHeureRetour = dateHeureRetour;
         this.vehicule = vehicule;
-        this.combinedTrip = combinedTrip;
-        this.reservationsJson = reservationsJson;
-        this.routeHotelsJson = routeHotelsJson;
+        this.combined = combined;
+        this.routeHotels = routeHotels;
+        this.reservations = reservations != null ? reservations : new ArrayList<>();
     }
 
     public Long getId() {
         return id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public LocalDate getDate() {
+        return date;
     }
 
-    public LocalDate getDateJour() {
-        return dateJour;
-    }
-
-    public void setDateJour(LocalDate dateJour) {
-        this.dateJour = dateJour;
+    public void setDate(LocalDate date) {
+        this.date = date;
     }
 
     public LocalDateTime getDateHeureDepart() {
@@ -105,27 +112,27 @@ public class Planification {
         this.vehicule = vehicule;
     }
 
-    public boolean isCombinedTrip() {
-        return combinedTrip;
+    public boolean isCombined() {
+        return combined;
     }
 
-    public void setCombinedTrip(boolean combinedTrip) {
-        this.combinedTrip = combinedTrip;
+    public void setCombined(boolean combined) {
+        this.combined = combined;
     }
 
-    public String getReservationsJson() {
-        return reservationsJson;
+    public String getRouteHotels() {
+        return routeHotels;
     }
 
-    public void setReservationsJson(String reservationsJson) {
-        this.reservationsJson = reservationsJson;
+    public void setRouteHotels(String routeHotels) {
+        this.routeHotels = routeHotels;
     }
 
-    public String getRouteHotelsJson() {
-        return routeHotelsJson;
+    public List<Reservation> getReservations() {
+        return reservations;
     }
 
-    public void setRouteHotelsJson(String routeHotelsJson) {
-        this.routeHotelsJson = routeHotelsJson;
+    public void setReservations(List<Reservation> reservations) {
+        this.reservations = reservations;
     }
 }
