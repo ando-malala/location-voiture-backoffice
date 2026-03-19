@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -308,7 +309,7 @@ public class AssignmentService {
         double distanceTotale = 0;
         long idDernier = aeroport.getId();
 
-        for (ReservationSim res : routeOrdonnee) {
+        for (Reservation res : routeOrdonnee) {
             long idHotel = res.getHotel().getId();
             // Si deux stops successifs sont au même hôtel, la distance est 0 (pas en BDD)
             if (idHotel != idDernier) {
