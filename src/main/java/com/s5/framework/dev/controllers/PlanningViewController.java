@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.s5.framework.dev.models.PlanificationNonAssigne;
+import com.s5.framework.dev.models.Planning;
 import com.s5.framework.dev.services.AssignmentService;
 import com.s5.framework.dev.services.AssignmentService.SimulationResult;
 
@@ -43,6 +45,16 @@ public class PlanningViewController {
                 SimulationResult result = assignmentService.simuler(localDate);
                 model.addAttribute("assigned", result.assigned);
                 model.addAttribute("unassigned", result.nonAssigned);
+
+                int unassignedPassengers = result.nonAssigned.stream()
+                        .mapToInt(PlanificationNonAssigne::getNbPassager)
+                        .sum();
+                int assignedPassengers = result.assigned.stream()
+                        .mapToInt(Planning::getTotalPassagers)
+                        .sum();
+
+                model.addAttribute("assignedPassengers", assignedPassengers);
+                model.addAttribute("unassignedPassengers", unassignedPassengers);
             } catch (RuntimeException e) {
                 model.addAttribute("errorMessage", "Erreur lors de la simulation : " + e.getMessage());
                 model.addAttribute("assigned", List.of());
