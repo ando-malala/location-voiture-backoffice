@@ -31,6 +31,12 @@
             </div>
 
             <div class="form-group">
+                <label for="heureDispo">Heure de disponibilité journalière</label>
+                <input type="time" id="heureDispo" name="heureDispo"
+                       th:value="${vehicule.heureDispo != null ? #temporals.format(vehicule.heureDispo, 'HH:mm') : '00:00'}" required>
+            </div>
+
+            <div class="form-group">
                 <label for="typeCarburantId">Type de carburant</label>
                 <select id="typeCarburantId" name="typeCarburantId" required>
                     <option th:each="tc : ${typesCarburant}"

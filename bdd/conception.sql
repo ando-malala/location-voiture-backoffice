@@ -15,6 +15,7 @@ create Table vehicule(
     id serial primary key,
     reference VARCHAR(50) NOT NULL,
     capacite INT NOT NULL,
+    heure_dispo TIME NOT NULL DEFAULT '00:00:00',
     typeCarburantId INT NOT NULL,
     FOREIGN KEY (typeCarburantId) REFERENCES typeCarburant(id)
 );

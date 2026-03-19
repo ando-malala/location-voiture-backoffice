@@ -148,6 +148,16 @@ public class AssignmentService {
         }
     }
 
+    private static class Allocation {
+        final ReservationSim reservation;
+        final int quantite;
+
+        Allocation(ReservationSim reservation, int quantite) {
+            this.reservation = reservation;
+            this.quantite = quantite;
+        }
+    }
+
     // ------------------------------------------------------------------ //
     //  Main entry-point                                                    //
     // ------------------------------------------------------------------ //
@@ -186,7 +196,10 @@ public class AssignmentService {
         Map<Long, Integer> vehiculeNbTrajets = new HashMap<>();
         LocalDateTime debutJournee = date.atStartOfDay();
         for (Vehicule v : tousVehicules) {
-            vehiculeDisponible.put(v.getId(), debutJournee);
+            LocalDateTime disponibiliteInitiale = v.getHeureDispo() != null
+                    ? date.atTime(v.getHeureDispo())
+                    : debutJournee;
+            vehiculeDisponible.put(v.getId(), disponibiliteInitiale);
             vehiculeNbTrajets.put(v.getId(), 0);
         }
 
@@ -261,29 +274,25 @@ public class AssignmentService {
 
                 ReservationSim prochaineReservationEnCours = principale.getNbPassager() > 0 ? principale : null;
 
-                // Remplir les places restantes avec les plus gros groupes (affichage successif).
+                // Remplir les places restantes avec une allocation optimale globale.
                 if (placesRestantes > 0) {
-                List<ReservationSim> suivants = candidats.stream()
+                    List<ReservationSim> suivants = candidats.stream()
                     .filter(r -> !r.getId().equals(principale.getId()))
                     .filter(r -> r.getNbPassager() > 0)
-                    .sorted(Comparator.comparingInt(ReservationSim::getNbPassager).reversed()
-                        .thenComparing(ReservationSim::getDateHeure))
                     .collect(Collectors.toList());
 
-                for (ReservationSim suivant : suivants) {
-                    if (placesRestantes <= 0) break;
+                    List<Allocation> optimales = choisirAllocationsOptimales(
+                            suivants, placesRestantes, tousVehicules);
 
-                    int prisSuivant = Math.min(placesRestantes, suivant.getNbPassager());
-                    if (prisSuivant <= 0) continue;
+                    for (Allocation a : optimales) {
+                        if (a.quantite <= 0) continue;
+                        allocations.add(new ReservationSim(a.reservation.getReservation(), a.quantite));
+                        a.reservation.remaining -= a.quantite;
 
-                    allocations.add(new ReservationSim(suivant.getReservation(), prisSuivant));
-                    suivant.remaining -= prisSuivant;
-                    placesRestantes -= prisSuivant;
-
-                    // Si on commence un autre client sans le finir, il devient prioritaire ensuite.
-                    if (suivant.getNbPassager() > 0 && prochaineReservationEnCours == null) {
-                    prochaineReservationEnCours = suivant;
-                    }
+                        // Si on commence un autre client sans le finir, il devient prioritaire ensuite.
+                        if (a.reservation.getNbPassager() > 0 && prochaineReservationEnCours == null) {
+                            prochaineReservationEnCours = a.reservation;
+                        }
                 }
                 }
 
@@ -429,6 +438,134 @@ public class AssignmentService {
                 .orElseGet(() -> candidats.stream()
                         .min(Comparator.comparing(ReservationSim::getDateHeure))
                         .orElse(candidats.get(0)));
+    }
+
+    private static class AllocationScore {
+        int totalPris;
+        int reservationsTerminees;
+        int reservationsPartielles;
+        int restesCompatibles;
+        int quantiteMaxSurUneReservation;
+
+        AllocationScore(int totalPris,
+                        int reservationsTerminees,
+                        int reservationsPartielles,
+                        int restesCompatibles,
+                        int quantiteMaxSurUneReservation) {
+            this.totalPris = totalPris;
+            this.reservationsTerminees = reservationsTerminees;
+            this.reservationsPartielles = reservationsPartielles;
+            this.restesCompatibles = restesCompatibles;
+            this.quantiteMaxSurUneReservation = quantiteMaxSurUneReservation;
+        }
+    }
+
+    private List<Allocation> choisirAllocationsOptimales(List<ReservationSim> candidats,
+                                                         int placesRestantes,
+                                                         List<Vehicule> tousVehicules) {
+        List<Allocation> courant = new ArrayList<>();
+        List<Allocation> meilleur = new ArrayList<>();
+        AllocationScore meilleurScore = new AllocationScore(-1, -1, Integer.MAX_VALUE, -1, -1);
+
+        backtrackAllocation(0, placesRestantes, candidats, tousVehicules, courant, meilleur, meilleurScore);
+        return meilleur;
+    }
+
+    private void backtrackAllocation(int index,
+                                     int placesRestantes,
+                                     List<ReservationSim> candidats,
+                                     List<Vehicule> tousVehicules,
+                                     List<Allocation> courant,
+                                     List<Allocation> meilleur,
+                                     AllocationScore meilleurScore) {
+        if (index >= candidats.size() || placesRestantes <= 0) {
+            AllocationScore score = evaluerAllocation(courant, candidats, tousVehicules);
+            if (isMeilleurScore(score, meilleurScore)) {
+                meilleur.clear();
+                meilleur.addAll(courant.stream()
+                        .filter(a -> a.quantite > 0)
+                        .collect(Collectors.toList()));
+                meilleurScore.totalPris = score.totalPris;
+                meilleurScore.reservationsTerminees = score.reservationsTerminees;
+                meilleurScore.reservationsPartielles = score.reservationsPartielles;
+                meilleurScore.restesCompatibles = score.restesCompatibles;
+                meilleurScore.quantiteMaxSurUneReservation = score.quantiteMaxSurUneReservation;
+            }
+            return;
+        }
+
+        ReservationSim res = candidats.get(index);
+        int maxPrise = Math.min(placesRestantes, res.getNbPassager());
+
+        for (int q = 0; q <= maxPrise; q++) {
+            if (q > 0) {
+                courant.add(new Allocation(res, q));
+            }
+
+            backtrackAllocation(index + 1,
+                    placesRestantes - q,
+                    candidats,
+                    tousVehicules,
+                    courant,
+                    meilleur,
+                    meilleurScore);
+
+            if (q > 0) {
+                courant.remove(courant.size() - 1);
+            }
+        }
+    }
+
+    private AllocationScore evaluerAllocation(List<Allocation> allocations,
+                                              List<ReservationSim> candidats,
+                                              List<Vehicule> tousVehicules) {
+        int totalPris = allocations.stream().mapToInt(a -> a.quantite).sum();
+        int quantiteMax = allocations.stream().mapToInt(a -> a.quantite).max().orElse(0);
+
+        int reservationsTerminees = 0;
+        int reservationsPartielles = 0;
+        int restesCompatibles = 0;
+        for (ReservationSim res : candidats) {
+            int pris = allocations.stream()
+                    .filter(a -> a.reservation == res)
+                    .mapToInt(a -> a.quantite)
+                    .sum();
+            int reste = res.getNbPassager() - pris;
+
+            if (pris > 0 && reste == 0) {
+                reservationsTerminees++;
+            }
+            if (pris > 0 && reste > 0) {
+                reservationsPartielles++;
+            }
+
+            if (reste > 0 && capaciteCompatibleExiste(reste, tousVehicules)) {
+                restesCompatibles++;
+            }
+        }
+
+        return new AllocationScore(totalPris, reservationsTerminees, reservationsPartielles,
+                restesCompatibles, quantiteMax);
+    }
+
+    private boolean capaciteCompatibleExiste(int nbPassager, List<Vehicule> tousVehicules) {
+        return tousVehicules.stream().anyMatch(v -> v.getCapacite() == nbPassager);
+    }
+
+    private boolean isMeilleurScore(AllocationScore score, AllocationScore meilleur) {
+        if (score.totalPris != meilleur.totalPris) {
+            return score.totalPris > meilleur.totalPris;
+        }
+        if (score.reservationsTerminees != meilleur.reservationsTerminees) {
+            return score.reservationsTerminees > meilleur.reservationsTerminees;
+        }
+        if (score.reservationsPartielles != meilleur.reservationsPartielles) {
+            return score.reservationsPartielles < meilleur.reservationsPartielles;
+        }
+        if (score.restesCompatibles != meilleur.restesCompatibles) {
+            return score.restesCompatibles > meilleur.restesCompatibles;
+        }
+        return score.quantiteMaxSurUneReservation > meilleur.quantiteMaxSurUneReservation;
     }
 
     /**

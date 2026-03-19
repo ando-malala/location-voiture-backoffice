@@ -1,5 +1,6 @@
 package com.s5.framework.dev.models;
 
+import java.time.LocalTime;
 import java.util.Objects;
 
 import jakarta.persistence.Column;
@@ -29,6 +30,9 @@ public class Vehicule {
     @Column(name = "capacite", nullable = false)
     private Integer capacite;
 
+    @Column(name = "heure_dispo")
+    private LocalTime heureDispo;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "typecarburantid", nullable = false)
     private TypeCarburant typeCarburant;
@@ -51,6 +55,9 @@ public class Vehicule {
     public Integer getCapacite() { return capacite; }
     public void setCapacite(Integer capacite) { this.capacite = capacite; }
 
+    public LocalTime getHeureDispo() { return heureDispo; }
+    public void setHeureDispo(LocalTime heureDispo) { this.heureDispo = heureDispo; }
+
     public TypeCarburant getTypeCarburant() { return typeCarburant; }
     public void setTypeCarburant(TypeCarburant typeCarburant) { this.typeCarburant = typeCarburant; }
 
@@ -67,7 +74,7 @@ public class Vehicule {
 
     @Override
     public String toString() {
-        return "Vehicule{id=" + id + ", capacite=" + capacite + ", typeCarburant=" + typeCarburant + "}";
+        return "Vehicule{id=" + id + ", capacite=" + capacite + ", heureDispo=" + heureDispo + ", typeCarburant=" + typeCarburant + "}";
     }
 }
 
