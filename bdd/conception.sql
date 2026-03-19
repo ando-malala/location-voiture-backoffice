@@ -1,6 +1,6 @@
-CREATE DATABASE bdd_voiture;
+CREATE DATABASE bdd_voiture_copy;
 
-\c bdd_voiture;
+\c bdd_voiture_copy;
 
 -- COMMENT
 
@@ -55,9 +55,12 @@ create table reservation (
     FOREIGN KEY (idHotel) REFERENCES hotel(id)
 );
 
--- La planification est calculée dynamiquement (simulation), pas stockée en base.
 
+create table planification_assigne(
 
+);
 
-  ----
+create table planification_non_assigne(
+
+);
 
