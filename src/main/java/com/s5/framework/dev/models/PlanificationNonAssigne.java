@@ -30,15 +30,19 @@ public class PlanificationNonAssigne {
     @JoinColumn(name = "reservation_id", nullable = false)
     private Reservation reservation;
 
+    @Column(name = "nb_passager", nullable = false)
+    private Integer nbPassager;
+
     @Column(name = "motif", length = 500)
     private String motif;
 
     public PlanificationNonAssigne() {
     }
 
-    public PlanificationNonAssigne(LocalDate date, Reservation reservation, String motif) {
+    public PlanificationNonAssigne(LocalDate date, Reservation reservation, Integer nbPassager, String motif) {
         this.date = date;
         this.reservation = reservation;
+        this.nbPassager = nbPassager;
         this.motif = motif;
     }
 
@@ -60,6 +64,14 @@ public class PlanificationNonAssigne {
 
     public void setReservation(Reservation reservation) {
         this.reservation = reservation;
+    }
+
+    public Integer getNbPassager() {
+        return nbPassager;
+    }
+
+    public void setNbPassager(Integer nbPassager) {
+        this.nbPassager = nbPassager;
     }
 
     public String getMotif() {

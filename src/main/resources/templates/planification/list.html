@@ -166,12 +166,12 @@
                 </thead>
                 <tbody>
                     <tr th:each="res : ${unassigned}">
-                        <td th:text="${res.id}"></td>
-                        <td th:text="${res.idClient}"></td>
-                        <td th:text="${res.hotel.nom}"></td>
+                        <td th:text="${res.reservation.id}"></td>
+                        <td th:text="${res.reservation.idClient}"></td>
+                        <td th:text="${res.reservation.hotel.nom}"></td>
                         <td style="text-align:center; font-weight:600;" th:text="${res.nbPassager}"></td>
-                        <td th:text="${#temporals.format(res.dateHeure, 'dd/MM/yyyy HH:mm')}"></td>
-                        <td style="color:#991b1b; font-size:0.82rem;">Aucun véhicule avec capacité ≥ <span th:text="${res.nbPassager}"></span> pl. disponible</td>
+                        <td th:text="${#temporals.format(res.reservation.dateHeure, 'dd/MM/yyyy HH:mm')}"></td>
+                        <td style="color:#991b1b; font-size:0.82rem;" th:text="${res.motif}"></td>
                     </tr>
                 </tbody>
             </table>

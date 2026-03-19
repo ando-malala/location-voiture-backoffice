@@ -88,22 +88,64 @@ public class AssignmentService {
     /** Résultat de la simulation pour une date donnée. */
     public static class SimulationResult {
         public final List<Planning> assigned;
-        public final List<Reservation> unassigned;
+        public final List<PlanificationNonAssigne> nonAssigned;
 
-        public SimulationResult(List<Planning> assigned, List<Reservation> unassigned) {
+        public SimulationResult(List<Planning> assigned, List<PlanificationNonAssigne> nonAssigned) {
             this.assigned = assigned;
-            this.unassigned = unassigned;
+            this.nonAssigned = nonAssigned;
         }
     }
 
     /** Résultat intermédiaire de tenteCombine : trajet retenu + véhicule déjà sélectionné. */
     private static class TrajetAssigne {
-        final List<Reservation> trajet;
+        final List<ReservationSim> trajet;
         final Vehicule vehicule;
+        final ReservationSim partialRemaining;
 
-        TrajetAssigne(List<Reservation> trajet, Vehicule vehicule) {
+        TrajetAssigne(List<ReservationSim> trajet, Vehicule vehicule, ReservationSim partialRemaining) {
             this.trajet = trajet;
             this.vehicule = vehicule;
+            this.partialRemaining = partialRemaining;
+        }
+    }
+
+    /** Réservation simulée (peut être scindée) pour la planification. */
+    private static class ReservationSim {
+        final Reservation reservation;
+        int remaining;
+
+        ReservationSim(Reservation reservation) {
+            this.reservation = reservation;
+            this.remaining = reservation.getNbPassager();
+        }
+
+        ReservationSim(Reservation reservation, int remaining) {
+            this.reservation = reservation;
+            this.remaining = remaining;
+        }
+
+        public Long getId() {
+            return reservation.getId();
+        }
+
+        public String getIdClient() {
+            return reservation.getIdClient();
+        }
+
+        public int getNbPassager() {
+            return remaining;
+        }
+
+        public LocalDateTime getDateHeure() {
+            return reservation.getDateHeure();
+        }
+
+        public Hostel getHotel() {
+            return reservation.getHotel();
+        }
+
+        public Reservation getReservation() {
+            return reservation;
         }
     }
 
@@ -117,9 +159,10 @@ public class AssignmentService {
     public SimulationResult simuler(LocalDate date) {
 
         /* 1 — Récupérer les réservations du jour, triées par heure */
-        List<Reservation> reservations = reservationService.findByDate(date)
+        List<ReservationSim> reservations = reservationService.findByDate(date)
                 .stream()
                 .sorted(Comparator.comparing(Reservation::getDateHeure))
+                .map(ReservationSim::new)
                 .collect(Collectors.toList());
 
         /* 2 — Paramètres */
@@ -136,7 +179,6 @@ public class AssignmentService {
         planificationService.clearForDate(date);
 
         List<Planning> assigned = new ArrayList<>();
-        List<Reservation> unassigned = new ArrayList<>();
 
         List<Planification> planifications = new ArrayList<>();
         List<PlanificationNonAssigne> nonAssignes = new ArrayList<>();
@@ -152,29 +194,99 @@ public class AssignmentService {
         Random random = new Random();
 
         /* 5 — Traiter les réservations en prenant en compte le temps d'attente. */
-        List<Reservation> pending = new ArrayList<>(reservations);
+        List<ReservationSim> pending = new ArrayList<>(reservations);
 
         while (!pending.isEmpty()) {
             // Toujours commencer par la réservation la plus ancienne (celle qui risque
             // le plus de dépasser son temps d'attente).
-            Reservation principale = pending.get(0);
+            ReservationSim principale = pending.get(0);
             LocalDateTime maxDepart = principale.getDateHeure().plusMinutes(tempsAttente);
 
             /* Les candidats au regroupement sont celles dont l'heure est <= maxDepart */
-            List<Reservation> candidats = pending.stream()
+            List<ReservationSim> candidats = pending.stream()
                     .filter(r -> !r.getDateHeure().isAfter(maxDepart))
                     .collect(Collectors.toList());
 
             /* Construire la liste pour l'algorithme de combinaison :
              * - Principale en premier, puis les autres candidats triés par nbPassager décroissant. */
-            List<Reservation> candidatesTrajet = new ArrayList<>();
+            List<ReservationSim> candidatesTrajet = new ArrayList<>();
             candidatesTrajet.add(principale);
             candidatesTrajet.addAll(candidats.stream()
                     .filter(r -> !r.getId().equals(principale.getId()))
-                    .sorted(Comparator.comparingInt(Reservation::getNbPassager).reversed()
-                            .thenComparing(Reservation::getDateHeure))
+                    .sorted(Comparator.comparingInt(ReservationSim::getNbPassager).reversed()
+                            .thenComparing(ReservationSim::getDateHeure))
                     .collect(Collectors.toList()));
 
+            // --- 5.1 — Si la réservation ne tient dans aucun véhicule seul, on la scinde. ---
+            List<Vehicule> disponibles = tousVehicules.stream()
+                    .filter(v -> !vehiculeDisponible.getOrDefault(v.getId(), debutJournee).isAfter(maxDepart))
+                    .collect(Collectors.toList());
+
+            int totalCapacite = disponibles.stream().mapToInt(Vehicule::getCapacite).sum();
+            int maxCapaciteDispo = disponibles.stream().mapToInt(Vehicule::getCapacite).max().orElse(0);
+
+            if (disponibles.isEmpty()) {
+                // Aucun véhicule disponible à cette heure : réservation non assignable.
+                nonAssignes.add(new PlanificationNonAssigne(
+                        date,
+                        principale.getReservation(),
+                        principale.getNbPassager(),
+                        "Aucun véhicule disponible à l'heure de départ"));
+                pending.remove(0);
+                continue;
+            }
+
+            if (principale.getNbPassager() > maxCapaciteDispo) {
+                // Scinder la réservation en plusieurs véhicules avant de passer à la suivante.
+                int reste = principale.getNbPassager();
+                while (reste > 0) {
+                    Vehicule choisi = choisirVehicule(
+                            tousVehicules, vehiculeDisponible, vehiculeNbTrajets, maxDepart, reste, random);
+                    if (choisi == null) {
+                        // Aucun véhicule disponible pour le reste de la réservation : on marque le reste comme non assigné.
+                        nonAssignes.add(new PlanificationNonAssigne(
+                                date,
+                                principale.getReservation(),
+                                reste,
+                                "Reste de la réservation non assigné (" + reste + " passagers)")
+                        );
+                        break;
+                    }
+
+                    int pris = Math.min(reste, choisi.getCapacite());
+                    reste -= pris;
+
+                    // Calcul du retour pour ce véhicule (trajet simple aller-retour)
+                    LocalDateTime depart = maxDepart;
+                    double distance = distanceService.getDistanceKm(aeroport.getId(), principale.getHotel().getId());
+                    long tempsTrajetMin = Math.round((distance * 2 / vitesseMoyenne) * 60);
+                    LocalDateTime retour = depart.plusMinutes(tempsTrajetMin);
+
+                    // Mettre à jour l'état du véhicule
+                    vehiculeNbTrajets.compute(choisi.getId(), (k, v) -> v == null ? 1 : v + 1);
+                    vehiculeDisponible.put(choisi.getId(), retour);
+
+                    // Enregistrer le planning (une ligne par véhicule utilisé)
+                    List<Planning.ResInfo> resInfos = List.of(new Planning.ResInfo(
+                            principale.getId(),
+                            principale.getIdClient(),
+                            pris,
+                            principale.getHotel().getNom(),
+                            distance));
+
+                    Planning row = new Planning(resInfos, depart, retour, choisi, false,
+                            List.of(principale.getHotel().getNom()));
+                    assigned.add(row);
+
+                    planifications.add(new Planification(date, depart, retour, choisi, false,
+                            principale.getHotel().getNom(), List.of(principale.getReservation())));
+                }
+
+                pending.remove(0);
+                continue;
+            }
+
+            // --- 5.2 — Réservation tient dans un seul véhicule : on essaye de combiner avec d'autres. ---
             TrajetAssigne resultat = tenteCombine(
                     candidatesTrajet, tousVehicules,
                     vehiculeDisponible, vehiculeNbTrajets,
@@ -182,26 +294,26 @@ public class AssignmentService {
 
             if (resultat == null) {
                 // Aucun véhicule même pour la seule réservation principale (ou pas disponible)
-                unassigned.add(principale);
                 nonAssignes.add(new PlanificationNonAssigne(
                         date,
-                        principale,
+                        principale.getReservation(),
+                        principale.getNbPassager(),
                         "Aucun véhicule avec capacité ≥ " + principale.getNbPassager() + " pl. disponible"));
                 pending.remove(0);
                 continue;
             }
 
-            List<Reservation> trajet = resultat.trajet;
+            List<ReservationSim> trajet = resultat.trajet;
             Vehicule choisi = resultat.vehicule;
 
             /* Départ effectif = heure de la dernière réservation du trajet */
             LocalDateTime depart = trajet.stream()
-                    .map(Reservation::getDateHeure)
+                    .map(ReservationSim::getDateHeure)
                     .max(LocalDateTime::compareTo)
                     .orElse(principale.getDateHeure());
 
             /* Construire la route : hôtels triés par distance croissante depuis l'aéroport */
-            List<Reservation> routeOrdonnee = trajet.stream()
+            List<ReservationSim> routeOrdonnee = trajet.stream()
                     .sorted(Comparator.comparingDouble(r ->
                             distanceService.getDistanceKm(aeroport.getId(), r.getHotel().getId())))
                     .collect(Collectors.toList());
@@ -236,17 +348,24 @@ public class AssignmentService {
 
             /* Persister cette planification */
             planifications.add(new Planification(date, depart, retour, choisi, combined,
-                    String.join(" → ", routeHotels), trajet));
+                    String.join(" → ", routeHotels),
+                    trajet.stream().map(ReservationSim::getReservation).collect(Collectors.toList())));
 
             /* Marquer toutes les réservations du trajet comme traitées */
-            Set<Long> trajetIds = trajet.stream().map(Reservation::getId).collect(Collectors.toSet());
-            pending.removeIf(r -> trajetIds.contains(r.getId()));
+            pending.removeIf(r -> r.getNbPassager() == 0);
+
+            /* Si une fragment de réservation a été partiellement utilisé, on le remet en tête */
+            if (resultat.partialRemaining != null) {
+                if (pending.remove(resultat.partialRemaining)) {
+                    pending.add(0, resultat.partialRemaining);
+                }
+            }
         }
 
         planificationService.savePlanifications(planifications);
         planificationService.saveNonAssignes(nonAssignes);
 
-        return new SimulationResult(assigned, unassigned);
+        return new SimulationResult(assigned, nonAssignes);
     }
 
     // ------------------------------------------------------------------ //
@@ -263,13 +382,13 @@ public class AssignmentService {
      * réservations suivantes du même créneau (les plus grandes d'abord) qui tiennent.
      * Retourne {@code null} si aucun véhicule n'est disponible pour la principale.
      */
-    private TrajetAssigne tenteCombine(List<Reservation> candidates,
+    private TrajetAssigne tenteCombine(List<ReservationSim> candidates,
                                        List<Vehicule> tousVehicules,
                                        Map<Long, LocalDateTime> vehiculeDisponible,
                                        Map<Long, Integer> vehiculeNbTrajets,
                                        LocalDateTime depart,
                                        Random random) {
-        Reservation principale = candidates.get(0);
+        ReservationSim principale = candidates.get(0);
 
         /* 1 — Chercher le véhicule le mieux adapté à la réservation principale seule */
         Vehicule vehiculePrincipal = choisirVehicule(
@@ -280,34 +399,56 @@ public class AssignmentService {
             return null; // aucun véhicule disponible, même pour la principale
         }
 
-        /* 2 — Remplir les places restantes de ce véhicule avec d'autres réservations
-         *     du même créneau (les plus grandes d'abord pour maximiser le remplissage) */
-        List<Reservation> trajet = new ArrayList<>();
+        /* 2 — Remplir le véhicule en utilisant au maximum les places disponibles. */
+        List<ReservationSim> trajet = new ArrayList<>();
         trajet.add(principale);
         int placesRestantes = vehiculePrincipal.getCapacite() - principale.getNbPassager();
+        principale.remaining = 0;
 
-        /* Trier les suivantes par nbPassager décroissant : on place d'abord les groupes
-         * les plus grands qui tiennent dans les places restantes, évitant ainsi qu'un
-         * petit groupe "bouche" des places qu'un plus grand groupe aurait pu occuper. */
-        List<Reservation> suivantes = candidates.subList(1, candidates.size())
+        /* Trier les suivantes par nbPassager décroissant pour maximiser l'utilisation. */
+        List<ReservationSim> suivantes = candidates.subList(1, candidates.size())
                 .stream()
-                .sorted(Comparator.comparingInt(Reservation::getNbPassager).reversed())
+                .filter(r -> r.getNbPassager() > 0)
+                .sorted(Comparator.comparingInt(ReservationSim::getNbPassager).reversed())
                 .collect(Collectors.toList());
 
-        for (Reservation suivante : suivantes) {
-            if (suivante.getNbPassager() <= placesRestantes) {
+        ReservationSim partialRemaining = null;
+
+        for (ReservationSim suivante : suivantes) {
+            if (placesRestantes <= 0) break;
+
+            int demande = suivante.getNbPassager();
+            if (demande <= placesRestantes) {
                 trajet.add(suivante);
-                placesRestantes -= suivante.getNbPassager();
+                placesRestantes -= demande;
+                suivante.remaining = 0;
+            } else {
+                // On peut utiliser une partie de cette réservation pour combler les places restantes.
+                ReservationSim part = new ReservationSim(suivante.getReservation(), placesRestantes);
+                trajet.add(part);
+                suivante.remaining = demande - placesRestantes;
+                partialRemaining = suivante;
+                placesRestantes = 0;
+                break;
             }
         }
 
-        return new TrajetAssigne(trajet, vehiculePrincipal);
+        return new TrajetAssigne(trajet, vehiculePrincipal, partialRemaining);
     }
 
     /**
      * Choisit le meilleur véhicule disponible pour {@code nbPassager} passagers.
-     * Critères : capacité minimale suffisante → priorité Diesel → aléatoire.
-     * Retourne {@code null} si aucun véhicule valide n'est disponible.
+     * <p>
+     * Critères :
+     * <ol>
+     *   <li>est disponible à {@code depart} (retour déjà effectué)</li>
+     *   <li>minimise le nombre de trajets déjà effectués</li>
+     *   <li>si possible, choisit un véhicule dont la capacité est la plus proche (≥) de
+     *       {@code nbPassager}</li>
+     *   <li>si aucun véhicule n'est assez grand, choisit le plus grand disponible</li>
+     *   <li>en cas d'égalité, préférence Diesel puis aléatoire</li>
+     * </ol>
+     * Retourne {@code null} si aucun véhicule n'est disponible.
      */
     private Vehicule choisirVehicule(List<Vehicule> tousVehicules,
                                      Map<Long, LocalDateTime> vehiculeDisponible,
@@ -315,15 +456,27 @@ public class AssignmentService {
                                      LocalDateTime depart,
                                      int nbPassager,
                                      Random random) {
-        List<Vehicule> candidats = tousVehicules.stream()
+        List<Vehicule> candidatsDisponibles = tousVehicules.stream()
                 .filter(v -> {
                     LocalDateTime dispo = vehiculeDisponible.getOrDefault(v.getId(), LocalDateTime.MIN);
                     return !dispo.isAfter(depart);
                 })
+                .collect(Collectors.toList());
+
+        if (candidatsDisponibles.isEmpty()) return null;
+
+        // 1) Favoriser les véhicules dont la capacité est >= nbPassager
+        List<Vehicule> candidats = candidatsDisponibles.stream()
                 .filter(v -> v.getCapacite() >= nbPassager)
                 .collect(Collectors.toList());
 
-        if (candidats.isEmpty()) return null;
+        // 2) Si aucun véhicule n'est assez grand, on prend les véhicules les plus grands disponibles
+        if (candidats.isEmpty()) {
+            int maxCap = candidatsDisponibles.stream().mapToInt(Vehicule::getCapacite).max().orElse(0);
+            candidats = candidatsDisponibles.stream()
+                    .filter(v -> v.getCapacite() == maxCap)
+                    .collect(Collectors.toList());
+        }
 
         int minTrajets = candidats.stream()
                 .mapToInt(v -> vehiculeNbTrajets.getOrDefault(v.getId(), 0))
@@ -353,7 +506,7 @@ public class AssignmentService {
      * Route : Aéroport → hotel_1 → hotel_2 → … → hotel_N → Aéroport
      * ({@code routeOrdonnee} est déjà triée du plus proche au plus éloigné).
      */
-    private long calculerTempsTrajet(List<Reservation> routeOrdonnee,
+    private long calculerTempsTrajet(List<ReservationSim> routeOrdonnee,
                                      Hostel aeroport,
                                      int vitesseMoyenne) {
         if (routeOrdonnee.isEmpty()) return 0;

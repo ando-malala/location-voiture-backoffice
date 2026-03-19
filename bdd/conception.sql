@@ -80,6 +80,7 @@ create table planification_non_assigne (
     id serial primary key,
     date date not null,
     reservation_id int not null,
+    nb_passager int not null,
     motif varchar(500),
     foreign key (reservation_id) references reservation(id)
 );
