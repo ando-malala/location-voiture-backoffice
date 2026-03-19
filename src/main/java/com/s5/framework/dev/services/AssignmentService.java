@@ -4,8 +4,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -14,6 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.s5.framework.dev.models.Hostel;
+import com.s5.framework.dev.models.Planification;
+import com.s5.framework.dev.models.PlanificationNonAssigne;
 import com.s5.framework.dev.models.Planning;
 import com.s5.framework.dev.models.Reservation;
 import com.s5.framework.dev.models.Vehicule;
@@ -42,13 +45,16 @@ import com.s5.framework.dev.repositories.VehiculeRepository;
  *       </ul>
  *   </li>
  *   <li>Sélection du véhicule : capacité minimale suffisante → priorité Diesel → aléatoire.</li>
- *   <li>Un véhicule déjà utilisé dans la simulation ne peut plus être assigné.</li>
+ *   <li>Un véhicule peut être réutilisé après son heure de retour ; on priorise ceux
+ *       qui ont effectué le moins de trajets.</li>
  *   <li>Pour un trajet combiné, la voiture visite les hôtels <strong>du plus proche
  *       au plus éloigné</strong> de l'aéroport ; le temps de retour est calculé sur
  *       l'intégralité du trajet multi-stops.</li>
  * </ol>
  *
- * Aucune donnée n'est écrite en base.
+ * Les planifications sont désormais persistées en base.
+ * Lors d'une replanification pour une date donnée, les anciennes planifications
+ * pour cette date sont supprimées puis recalculées.
  */
 @Service
 public class AssignmentService {
@@ -58,18 +64,21 @@ public class AssignmentService {
     private final DistanceService distanceService;
     private final ParametreService parametreService;
     private final ReservationService reservationService;
+    private final PlanificationService planificationService;
 
     @Autowired
     public AssignmentService(VehiculeRepository vehiculeRepository,
                              HostelRepository hostelRepository,
                              DistanceService distanceService,
                              ParametreService parametreService,
-                             ReservationService reservationService) {
+                             ReservationService reservationService,
+                             PlanificationService planificationService) {
         this.vehiculeRepository = vehiculeRepository;
         this.hostelRepository = hostelRepository;
         this.distanceService = distanceService;
         this.parametreService = parametreService;
         this.reservationService = reservationService;
+        this.planificationService = planificationService;
     }
 
     // ------------------------------------------------------------------ //
@@ -123,12 +132,26 @@ public class AssignmentService {
          * tant que la différence entre la plus ancienne et la plus récente reste <= temps d'attente. */
         int tempsAttente = parametreService.getTempsAttente(); // en minutes
 
+        /* 4 — Réinitialiser les planifications existantes pour cette date (replanification) */
+        planificationService.clearForDate(date);
+
         List<Planning> assigned = new ArrayList<>();
         List<Reservation> unassigned = new ArrayList<>();
-        Set<Long> vehiculesUtilises = new HashSet<>();
+
+        List<Planification> planifications = new ArrayList<>();
+        List<PlanificationNonAssigne> nonAssignes = new ArrayList<>();
+
+        Map<Long, LocalDateTime> vehiculeDisponible = new HashMap<>();
+        Map<Long, Integer> vehiculeNbTrajets = new HashMap<>();
+        LocalDateTime debutJournee = date.atStartOfDay();
+        for (Vehicule v : tousVehicules) {
+            vehiculeDisponible.put(v.getId(), debutJournee);
+            vehiculeNbTrajets.put(v.getId(), 0);
+        }
+
         Random random = new Random();
 
-        /* 4 — Traiter les réservations en prenant en compte le temps d'attente. */
+        /* 5 — Traiter les réservations en prenant en compte le temps d'attente. */
         List<Reservation> pending = new ArrayList<>(reservations);
 
         while (!pending.isEmpty()) {
@@ -153,18 +176,23 @@ public class AssignmentService {
                     .collect(Collectors.toList()));
 
             TrajetAssigne resultat = tenteCombine(
-                    candidatesTrajet, tousVehicules, vehiculesUtilises, random);
+                    candidatesTrajet, tousVehicules,
+                    vehiculeDisponible, vehiculeNbTrajets,
+                    maxDepart, random);
 
             if (resultat == null) {
-                // Aucun véhicule même pour la seule réservation principale
+                // Aucun véhicule même pour la seule réservation principale (ou pas disponible)
                 unassigned.add(principale);
+                nonAssignes.add(new PlanificationNonAssigne(
+                        date,
+                        principale,
+                        "Aucun véhicule avec capacité ≥ " + principale.getNbPassager() + " pl. disponible"));
                 pending.remove(0);
                 continue;
             }
 
             List<Reservation> trajet = resultat.trajet;
             Vehicule choisi = resultat.vehicule;
-            vehiculesUtilises.add(choisi.getId());
 
             /* Départ effectif = heure de la dernière réservation du trajet */
             LocalDateTime depart = trajet.stream()
@@ -181,6 +209,10 @@ public class AssignmentService {
             /* Calculer le temps du trajet multi-stops */
             long tempsTrajetMin = calculerTempsTrajet(routeOrdonnee, aeroport, vitesseMoyenne);
             LocalDateTime retour = depart.plusMinutes(tempsTrajetMin);
+
+            /* Mettre à jour l'état du véhicule (disponibilité + nombre de trajets) */
+            vehiculeNbTrajets.compute(choisi.getId(), (k, v) -> v == null ? 1 : v + 1);
+            vehiculeDisponible.put(choisi.getId(), retour);
 
             /* Noms des hôtels dans l'ordre de visite (pour affichage) */
             List<String> routeHotels = routeOrdonnee.stream()
@@ -202,10 +234,17 @@ public class AssignmentService {
             Planning row = new Planning(resInfos, depart, retour, choisi, combined, routeHotels);
             assigned.add(row);
 
+            /* Persister cette planification */
+            planifications.add(new Planification(date, depart, retour, choisi, combined,
+                    String.join(" → ", routeHotels), trajet));
+
             /* Marquer toutes les réservations du trajet comme traitées */
             Set<Long> trajetIds = trajet.stream().map(Reservation::getId).collect(Collectors.toSet());
             pending.removeIf(r -> trajetIds.contains(r.getId()));
         }
+
+        planificationService.savePlanifications(planifications);
+        planificationService.saveNonAssignes(nonAssignes);
 
         return new SimulationResult(assigned, unassigned);
     }
@@ -226,13 +265,16 @@ public class AssignmentService {
      */
     private TrajetAssigne tenteCombine(List<Reservation> candidates,
                                        List<Vehicule> tousVehicules,
-                                       Set<Long> vehiculesUtilises,
+                                       Map<Long, LocalDateTime> vehiculeDisponible,
+                                       Map<Long, Integer> vehiculeNbTrajets,
+                                       LocalDateTime depart,
                                        Random random) {
         Reservation principale = candidates.get(0);
 
         /* 1 — Chercher le véhicule le mieux adapté à la réservation principale seule */
         Vehicule vehiculePrincipal = choisirVehicule(
-                tousVehicules, vehiculesUtilises, principale.getNbPassager(), random);
+                tousVehicules, vehiculeDisponible, vehiculeNbTrajets, depart,
+                principale.getNbPassager(), random);
 
         if (vehiculePrincipal == null) {
             return null; // aucun véhicule disponible, même pour la principale
@@ -268,18 +310,31 @@ public class AssignmentService {
      * Retourne {@code null} si aucun véhicule valide n'est disponible.
      */
     private Vehicule choisirVehicule(List<Vehicule> tousVehicules,
-                                     Set<Long> vehiculesUtilises,
+                                     Map<Long, LocalDateTime> vehiculeDisponible,
+                                     Map<Long, Integer> vehiculeNbTrajets,
+                                     LocalDateTime depart,
                                      int nbPassager,
                                      Random random) {
         List<Vehicule> candidats = tousVehicules.stream()
-                .filter(v -> !vehiculesUtilises.contains(v.getId()))
+                .filter(v -> {
+                    LocalDateTime dispo = vehiculeDisponible.getOrDefault(v.getId(), LocalDateTime.MIN);
+                    return !dispo.isAfter(depart);
+                })
                 .filter(v -> v.getCapacite() >= nbPassager)
                 .collect(Collectors.toList());
 
         if (candidats.isEmpty()) return null;
 
-        int minCap = candidats.stream().mapToInt(Vehicule::getCapacite).min().getAsInt();
-        List<Vehicule> plusPetits = candidats.stream()
+        int minTrajets = candidats.stream()
+                .mapToInt(v -> vehiculeNbTrajets.getOrDefault(v.getId(), 0))
+                .min()
+                .orElse(0);
+        List<Vehicule> meilleurs = candidats.stream()
+                .filter(v -> vehiculeNbTrajets.getOrDefault(v.getId(), 0) == minTrajets)
+                .collect(Collectors.toList());
+
+        int minCap = meilleurs.stream().mapToInt(Vehicule::getCapacite).min().getAsInt();
+        List<Vehicule> plusPetits = meilleurs.stream()
                 .filter(v -> v.getCapacite() == minCap)
                 .collect(Collectors.toList());
 
