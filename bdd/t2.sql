@@ -32,10 +32,10 @@ insert into parametre(libelle,valeur,idUnite) VALUES
 ('Temps d attente' , 30,2);
 
 INSERT INTO vehicule(reference,capacite,heure_dispo,typeCarburantId) VALUES
-('vehicule1', 5, '00:00', 1),
-('vehicule2', 5,  '00:00', 2),
+('vehicule1', 5, '09:00', 1),
+('vehicule2', 5,  '09:00', 2),
 ('vehicule3', 12,  '00:00', 1),
-('vehicule4', 9, '00:00', 1),
+('vehicule4', 9, '09:00', 1),
 ('vehicule5', 12, '13:00', 2);
 
 INSERT INTO reservation(idHotel, idClient, nbPassager, dateHeure) VALUES

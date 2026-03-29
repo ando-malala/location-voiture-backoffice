@@ -112,15 +112,24 @@ public class AssignmentService {
     private static class ReservationSim {
         final Reservation reservation;
         int remaining;
+        LocalDateTime dateHeureSimulee;
 
         ReservationSim(Reservation reservation) {
             this.reservation = reservation;
             this.remaining = reservation.getNbPassager();
+            this.dateHeureSimulee = reservation.getDateHeure();
         }
 
         ReservationSim(Reservation reservation, int remaining) {
             this.reservation = reservation;
             this.remaining = remaining;
+            this.dateHeureSimulee = reservation.getDateHeure();
+        }
+
+        ReservationSim(ReservationSim source, int remaining) {
+            this.reservation = source.reservation;
+            this.remaining = remaining;
+            this.dateHeureSimulee = source.dateHeureSimulee;
         }
 
         public Long getId() {
@@ -136,7 +145,11 @@ public class AssignmentService {
         }
 
         public LocalDateTime getDateHeure() {
-            return reservation.getDateHeure();
+            return dateHeureSimulee;
+        }
+
+        public void setDateHeureSimulee(LocalDateTime dateHeureSimulee) {
+            this.dateHeureSimulee = dateHeureSimulee;
         }
 
         public Hostel getHotel() {
@@ -242,11 +255,32 @@ public class AssignmentService {
                     .collect(Collectors.toList());
 
             if (disponibles.isEmpty()) {
+                LocalDateTime prochaineDisponibilite = vehiculeDisponible.values().stream()
+                    .min(LocalDateTime::compareTo)
+                    .orElse(null);
+
+                if (prochaineDisponibilite != null) {
+                    LocalDateTime prochaineReservationFuture = pending.stream()
+                            .filter(r -> r != principale)
+                            .map(ReservationSim::getDateHeure)
+                            .filter(h -> h.isAfter(principale.getDateHeure()))
+                            .min(LocalDateTime::compareTo)
+                            .orElse(null);
+
+                    LocalDateTime nouveauCreneau = prochaineDisponibilite;
+                    if (prochaineReservationFuture != null && prochaineReservationFuture.isAfter(nouveauCreneau)) {
+                        nouveauCreneau = prochaineReservationFuture;
+                    }
+
+                    principale.setDateHeureSimulee(nouveauCreneau);
+                    continue;
+                }
+
                 nonAssignes.add(new PlanificationNonAssigne(
-                        date,
-                        principale.getReservation(),
-                        principale.getNbPassager(),
-                        "Aucun véhicule disponible à l'heure de départ"));
+                    date,
+                    principale.getReservation(),
+                    principale.getNbPassager(),
+                    "Aucun véhicule disponible"));
                 pending.remove(principale);
                 continue;
             }
@@ -268,7 +302,7 @@ public class AssignmentService {
                 int placesRestantes = choisi.getCapacite() - pris;
 
                 List<ReservationSim> allocations = new ArrayList<>();
-                allocations.add(new ReservationSim(principale.getReservation(), pris));
+                allocations.add(new ReservationSim(principale, pris));
 
                 principale.remaining -= pris;
 
@@ -282,17 +316,13 @@ public class AssignmentService {
                     .collect(Collectors.toList());
 
                     List<Allocation> optimales = choisirAllocationsOptimales(
-                            suivants, placesRestantes, tousVehicules);
+                            suivants, placesRestantes);
 
                     for (Allocation a : optimales) {
                         if (a.quantite <= 0) continue;
-                        allocations.add(new ReservationSim(a.reservation.getReservation(), a.quantite));
+                        allocations.add(new ReservationSim(a.reservation, a.quantite));
                         a.reservation.remaining -= a.quantite;
 
-                        // Si on commence un autre client sans le finir, il devient prioritaire ensuite.
-                        if (a.reservation.getNbPassager() > 0 && prochaineReservationEnCours == null) {
-                            prochaineReservationEnCours = a.reservation;
-                        }
                 }
                 }
 
@@ -301,10 +331,17 @@ public class AssignmentService {
                         distanceService.getDistanceKm(aeroport.getId(), r.getHotel().getId())))
                     .collect(Collectors.toList());
 
-                LocalDateTime depart = routeOrdonnee.stream()
+                LocalDateTime heureDernierClient = routeOrdonnee.stream()
                     .map(ReservationSim::getDateHeure)
                     .max(LocalDateTime::compareTo)
                     .orElse(principale.getDateHeure());
+
+                LocalDateTime dispoVehicule = vehiculeDisponible
+                    .getOrDefault(choisi.getId(), debutJournee);
+
+                LocalDateTime depart = heureDernierClient.isAfter(dispoVehicule)
+                    ? heureDernierClient
+                    : dispoVehicule;
 
                 long tempsTrajetMin = calculerTempsTrajet(routeOrdonnee, aeroport, vitesseMoyenne);
                 LocalDateTime retour = depart.plusMinutes(tempsTrajetMin);
@@ -461,14 +498,26 @@ public class AssignmentService {
     }
 
     private List<Allocation> choisirAllocationsOptimales(List<ReservationSim> candidats,
-                                                         int placesRestantes,
-                                                         List<Vehicule> tousVehicules) {
-        List<Allocation> courant = new ArrayList<>();
-        List<Allocation> meilleur = new ArrayList<>();
-        AllocationScore meilleurScore = new AllocationScore(-1, -1, Integer.MAX_VALUE, -1, -1);
+                                                         int placesRestantes) {
+        List<Allocation> allocations = new ArrayList<>();
+        int places = placesRestantes;
 
-        backtrackAllocation(0, placesRestantes, candidats, tousVehicules, courant, meilleur, meilleurScore);
-        return meilleur;
+        List<ReservationSim> tries = candidats.stream()
+                .filter(r -> r.getNbPassager() > 0)
+                .sorted(Comparator.comparingInt(ReservationSim::getNbPassager)
+                        .thenComparing(ReservationSim::getDateHeure))
+                .collect(Collectors.toList());
+
+        for (ReservationSim reservation : tries) {
+            if (places <= 0) break;
+            int quantite = Math.min(places, reservation.getNbPassager());
+            if (quantite > 0) {
+                allocations.add(new Allocation(reservation, quantite));
+                places -= quantite;
+            }
+        }
+
+        return allocations;
     }
 
     private void backtrackAllocation(int index,
