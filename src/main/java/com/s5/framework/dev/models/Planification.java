@@ -45,6 +45,9 @@ public class Planification {
     @Column(name = "combined", nullable = false)
     private boolean combined;
 
+    @Column(name = "nbtrajet", nullable = false)
+    private Integer nbTrajet;
+
     /** Liste des hôtels visités (séparés par ","). */
     @Column(name = "route_hotels", length = 1000)
     private String routeHotels;
@@ -65,6 +68,7 @@ public class Planification {
                         LocalDateTime dateHeureRetour,
                         Vehicule vehicule,
                         boolean combined,
+                        Integer nbTrajet,
                         String routeHotels,
                         List<Reservation> reservations) {
         this.date = date;
@@ -72,6 +76,7 @@ public class Planification {
         this.dateHeureRetour = dateHeureRetour;
         this.vehicule = vehicule;
         this.combined = combined;
+        this.nbTrajet = nbTrajet;
         this.routeHotels = routeHotels;
         this.reservations = reservations != null ? reservations : new ArrayList<>();
     }
@@ -118,6 +123,14 @@ public class Planification {
 
     public void setCombined(boolean combined) {
         this.combined = combined;
+    }
+
+    public Integer getNbTrajet() {
+        return nbTrajet;
+    }
+
+    public void setNbTrajet(Integer nbTrajet) {
+        this.nbTrajet = nbTrajet;
     }
 
     public String getRouteHotels() {

@@ -64,6 +64,7 @@ create table planification (
     dateheureretour timestamp not null,
     idvehicule int not null,
     combined boolean not null,
+    nbtrajet int not null,
     route_hotels varchar(1000),
     foreign key (idvehicule) references vehicule(id)
 );

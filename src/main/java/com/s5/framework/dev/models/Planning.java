@@ -24,14 +24,19 @@ public class Planning {
         private final Integer nbPassager;
         private final String  nomHotel;
         private final Double  distanceKm;
+        private final Double  distanceAeroportHotelKm;
+        private final String  hotelPrecedent;
 
         public ResInfo(Long idReservation, String idClient, Integer nbPassager,
-                       String nomHotel, Double distanceKm) {
+                       String nomHotel, Double distanceKm,
+                       Double distanceAeroportHotelKm, String hotelPrecedent) {
             this.idReservation = idReservation;
             this.idClient      = idClient;
             this.nbPassager    = nbPassager;
             this.nomHotel      = nomHotel;
             this.distanceKm    = distanceKm;
+            this.distanceAeroportHotelKm = distanceAeroportHotelKm;
+            this.hotelPrecedent = hotelPrecedent;
         }
 
         public Long    getIdReservation() { return idReservation; }
@@ -39,6 +44,8 @@ public class Planning {
         public Integer getNbPassager()    { return nbPassager; }
         public String  getNomHotel()      { return nomHotel; }
         public Double  getDistanceKm()    { return distanceKm; }
+        public Double  getDistanceAeroportHotelKm() { return distanceAeroportHotelKm; }
+        public String  getHotelPrecedent() { return hotelPrecedent; }
     }
 
     // ------------------------------------------------------------------ //

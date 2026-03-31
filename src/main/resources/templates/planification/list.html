@@ -57,7 +57,9 @@
                         <th style="text-align:center;">Nb Passagers</th>
                         <th>Date-Heure Départ</th>
                         <th>Date-Heure Retour</th>
-                        <th style="text-align:center;">Distance (km)</th>
+                        <th>Hôtel précédent</th>
+                        <th style="text-align:center;">Distance segment (km)</th>
+                        <th style="text-align:center;">Distance aéroport-hôtel (km)</th>
                         <th>Type de trajet</th>
                         <th style="text-align:center;">Capacité</th>
                         <th>ID Véhicule</th>
@@ -112,10 +114,26 @@
                         <!-- Date-Heure Retour -->
                         <td th:text="${#temporals.format(row.dateHeureRetour, 'dd/MM/yyyy HH:mm')}"></td>
 
-                        <!-- Distance(s) -->
+                        <!-- Hôtel précédent -->
+                        <td>
+                            <span th:each="res,it : ${row.reservations}">
+                                <span th:text="${res.hotelPrecedent}"></span>
+                                <br th:unless="${it.last}"/>
+                            </span>
+                        </td>
+
+                        <!-- Distance segment -->
                         <td style="text-align:center;">
                             <span th:each="res,it : ${row.reservations}">
                                 <span th:text="${res.distanceKm} + ' km'"></span>
+                                <br th:unless="${it.last}"/>
+                            </span>
+                        </td>
+
+                        <!-- Distance aéroport-hôtel -->
+                        <td style="text-align:center;">
+                            <span th:each="res,it : ${row.reservations}">
+                                <span th:text="${res.distanceAeroportHotelKm} + ' km'"></span>
                                 <br th:unless="${it.last}"/>
                             </span>
                         </td>
