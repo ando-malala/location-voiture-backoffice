@@ -1,3 +1,4 @@
+DROP DATABASE if EXISTS bdd_voiture_copy;
 CREATE DATABASE bdd_voiture_copy;
 
 \c bdd_voiture_copy;
