@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.s5.framework.dev.models.PlanificationNonAssigne;
+import com.s5.framework.dev.models.Planning;
 import com.s5.framework.dev.services.AssignmentService;
 import com.s5.framework.dev.services.AssignmentService.SimulationResult;
 

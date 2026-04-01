@@ -15,6 +15,7 @@ create Table vehicule(
     id serial primary key,
     reference VARCHAR(50) NOT NULL,
     capacite INT NOT NULL,
+    heure_dispo TIME NOT NULL DEFAULT '00:00:00',
     typeCarburantId INT NOT NULL,
     FOREIGN KEY (typeCarburantId) REFERENCES typeCarburant(id)
 );
@@ -63,6 +64,7 @@ create table planification (
     dateheureretour timestamp not null,
     idvehicule int not null,
     combined boolean not null,
+    nbtrajet int not null default 0,
     route_hotels varchar(1000),
     foreign key (idvehicule) references vehicule(id)
 );

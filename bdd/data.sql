@@ -32,12 +32,12 @@ insert into typeCarburant(libelle) values ('Diesel'),('Essence'),('Electrique'),
 -- VEHICULE
 -- REF-101 : 6 places  (voiture de taille intermédiaire)
 -- REF-103 : 17 places (grand van — peut combiner 12 + 5 passagers en un seul trajet)
-INSERT INTO vehicule(reference,capacite,typeCarburantId) VALUES
-('REF-101', 6,  1),
-('REF-102', 8,  2),
-('REF-103', 17, 1),
-('REF-104', 5,  3),
-('REF-105', 7,  4);
+INSERT INTO vehicule(reference,capacite,heure_dispo,typeCarburantId) VALUES
+('REF-101', 6,  '00:00', 1),
+('REF-102', 8,  '00:00', 2),
+('REF-103', 17, '00:00', 1),
+('REF-104', 5,  '00:00', 3),
+('REF-105', 7,  '00:00', 4);
 
 -- DISTANCE
 -- Aéroport (id=1) ↔ Hotels : distances directes

@@ -28,6 +28,7 @@
                     <th>ID</th>
                     <th>Référence</th>
                     <th>Capacité (pers.)</th>
+                    <th>Heure dispo</th>
                     <th>Type de carburant</th>
                     <th style="text-align:center;">Actions</th>
                 </tr>
@@ -37,6 +38,7 @@
                     <td th:text="${v.id}"></td>
                     <td th:text="${v.reference}"></td>
                     <td th:text="${v.capacite}"></td>
+                    <td th:text="${v.heureDispo != null ? #temporals.format(v.heureDispo, 'HH:mm') : '00:00'}"></td>
                     <td th:text="${v.typeCarburant != null ? v.typeCarburant.libelle : '-'}"></td>
                     <td style="text-align:center; display:flex; gap:8px; justify-content:center;">
                         <a th:href="@{/vehicules/edit/{id}(id=${v.id})}" class="btn-action btn-warning-action">✏️ Modifier</a>
@@ -47,7 +49,7 @@
                     </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(vehicules)}">
-                    <td colspan="5" style="text-align:center; color:#9ca3af; padding:32px;">Aucun véhicule enregistré.</td>
+                    <td colspan="6" style="text-align:center; color:#9ca3af; padding:32px;">Aucun véhicule enregistré.</td>
                 </tr>
             </tbody>
         </table>

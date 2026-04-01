@@ -1,8 +1,10 @@
 package com.s5.framework.dev.controllers;
 
+import java.time.LocalTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -54,12 +56,14 @@ public class VehiculeViewController {
     @PostMapping("/save")
     public String save(@RequestParam String reference,
                        @RequestParam Integer capacite,
+                       @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime heureDispo,
                        @RequestParam Long typeCarburantId) {
         TypeCarburant tc = typeCarburantService.findById(typeCarburantId)
                 .orElseThrow(() -> new RuntimeException("Type de carburant non trouvé : " + typeCarburantId));
         Vehicule v = new Vehicule();
         v.setReference(reference);
         v.setCapacite(capacite);
+        v.setHeureDispo(heureDispo);
         v.setTypeCarburant(tc);
         vehiculeService.create(v);
         return "redirect:/vehicules";
@@ -81,6 +85,7 @@ public class VehiculeViewController {
     public String update(@RequestParam Long id,
                          @RequestParam String reference,
                          @RequestParam Integer capacite,
+                 @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime heureDispo,
                          @RequestParam Long typeCarburantId) {
         TypeCarburant tc = typeCarburantService.findById(typeCarburantId)
                 .orElseThrow(() -> new RuntimeException("Type de carburant non trouvé : " + typeCarburantId));
@@ -88,6 +93,7 @@ public class VehiculeViewController {
                 .orElseThrow(() -> new RuntimeException("Véhicule non trouvé : " + id));
         v.setReference(reference);
         v.setCapacite(capacite);
+        v.setHeureDispo(heureDispo);
         v.setTypeCarburant(tc);
         vehiculeService.update(v);
         return "redirect:/vehicules";

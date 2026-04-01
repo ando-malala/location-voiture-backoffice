@@ -9,27 +9,18 @@ hotel;
 
 INSERT INTO hotel(nom) VALUES
 ('Aeroport'),
-('Colbert'),
-('Novotel'),
-('Ibis'),
-('Lokanga');
+('Hotel1'),
+('Hotel2');
+
 
 
 INSERT INTO distance(idLieuDepart, idLieuArrivee, distanceKm) VALUES
-(1,2,18),
-(1,3,20.5),
-(1,4,21),
-(1,5,23),
-(2,1,18),
-(3,1,20.5),
-(4,1,21),
-(5,1,23),
-(2,3,2.5),
-(2,4,3),
-(2,5,5),
-(3,4,1.5),
-(3,5,3.5),
-(4,5,2.5);
+(1,2,90),
+(1,3,35),
+(2,1,90),
+(3,1,35),
+(2,3,60),
+(3,2,60);
 
 
 insert into typeCarburant(libelle) values ('Diesel'),('Essence'),('Electrique'),('Hybride');
@@ -37,17 +28,20 @@ insert into typeCarburant(libelle) values ('Diesel'),('Essence'),('Electrique'),
 insert into unite(libelle) values ('km/h'),('minutes');
 
 insert into parametre(libelle,valeur,idUnite) VALUES
-('Vitesse moyenne',30,1),
+('Vitesse moyenne',50,1),
 ('Temps d attente' , 30,2);
 
 INSERT INTO vehicule(reference,capacite,heure_dispo,typeCarburantId) VALUES
-('MV-001', 10, '00:00', 1),
-('MV-002', 5,  '00:00', 1),
-('MV-003', 6,  '00:00', 1);
+('vehicule1', 5, '09:00', 1),
+('vehicule2', 5,  '09:00', 2),
+('vehicule3', 12,  '00:00', 1),
+('vehicule4', 9, '09:00', 1),
+('vehicule5', 12, '13:00', 2);
 
 INSERT INTO reservation(idHotel, idClient, nbPassager, dateHeure) VALUES
-(3, 'G1-A', 2, '2025-05-20 10:00'),
-(2, 'G1-B', 1,  '2025-05-20 10:00'),
-(3, 'G1-C', 4,  '2025-05-20 10:00'),
-(5, 'G1-D', 3,  '2025-05-20 10:00'),
-(4, 'G1-E', 5,  '2025-05-20 10:00');
+(2, 'client1', 7, '2026-03-19 09:00'),
+(3, 'client2', 20,  '2026-03-19 08:00'),
+(2, 'client3', 3,  '2026-03-19 09:10'),
+(2, 'client4', 10,  '2026-03-19 09:15'),
+(2, 'client5', 5,  '2026-03-19 09:20'),
+(2, 'client6', 12,  '2026-03-19 13:30');

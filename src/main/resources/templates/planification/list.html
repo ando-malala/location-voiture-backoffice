@@ -12,6 +12,9 @@
 
 <main class="main-content">
     <div class="page-title">🗓️ Planification</div>
+    <br/>
+    <h3 style="font-size: xx-large;">ETU 3101 .         ETU 3156 .          ETU 3346</h3>
+    <br/>
     <!-- <div class="page-subtitle">Simulation statique d'assignation des véhicules aux réservations</div> -->
 
     <!-- Sélecteur de date -->
@@ -41,6 +44,8 @@
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
                 <span style="font-size:1.05rem; font-weight:700; color:#1e40af;">✅ Réservations assignées</span>
                 <span class="badge-count" th:text="${#lists.size(assigned)}">0</span>
+                <span style="font-size:0.9rem; color:#1e40af; font-weight:600;">(
+                    <span th:text="${assignedPassengers}">0</span> passagers)</span>
             </div>
 
             <table class="data-table" th:if="${!#lists.isEmpty(assigned)}">
@@ -149,6 +154,8 @@
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
                 <span style="font-size:1.05rem; font-weight:700; color:#dc2626;">❌ Réservations sans véhicule disponible</span>
                 <span class="badge-count badge-error" th:text="${#lists.size(unassigned)}">0</span>
+                <span style="font-size:0.9rem; color:#dc2626; font-weight:600;">(
+                    <span th:text="${unassignedPassengers}">0</span> passagers non assignés)</span>
             </div>
             <p style="font-size:0.85rem; color:#6b7280; margin-bottom:12px;">
                 Aucun véhicule disponible n'a une capacité suffisante pour ces réservations.
