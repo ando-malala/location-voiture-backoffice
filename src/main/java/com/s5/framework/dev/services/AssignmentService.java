@@ -131,6 +131,7 @@ public class AssignmentService {
                 .orElseThrow(() -> new RuntimeException("Hôtel aéroport (id=1) non trouvé en base."));
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         /* 3 — Regrouper par créneau (dateHeure identique) en conservant l'ordre */
         Map<LocalDateTime, List<Reservation>> groupes = reservations.stream()
                 .collect(Collectors.groupingBy(
@@ -147,6 +148,8 @@ public class AssignmentService {
         for (Map.Entry<LocalDateTime, List<Reservation>> entry : groupes.entrySet()) {
             LocalDateTime creneau = entry.getKey();
 =======
+=======
+>>>>>>> parent of 3c9df05 (Fix vrai)
         /* 3 — Temps d'attente : on peut regrouper des réservations proches dans le temps
          * tant que la différence entre la plus ancienne et la plus récente reste <= temps d'attente. */
         int tempsAttente = parametreService.getTempsAttente(); // en minutes
@@ -175,6 +178,9 @@ public class AssignmentService {
         /* 5 — Traiter les réservations en prenant en compte le temps d'attente. */
         List<ReservationSim> pending = new ArrayList<>(reservations);
         ReservationSim reservationEnCours = null;
+<<<<<<< HEAD
+>>>>>>> parent of 3c9df05 (Fix vrai)
+=======
 >>>>>>> parent of 3c9df05 (Fix vrai)
 
             /* Trier par nbPassager décroissant : priorité au plus grand groupe */
@@ -184,6 +190,7 @@ public class AssignmentService {
 
             Set<Long> dejaPrisEnCharge = new HashSet<>();
 
+<<<<<<< HEAD
 <<<<<<< HEAD
             for (int i = 0; i < groupe.size(); i++) {
                 Reservation principale = groupe.get(i);
@@ -219,9 +226,116 @@ public class AssignmentService {
                         .sorted(Comparator.comparingDouble(r ->
                                 distanceService.getDistanceKm(aeroport.getId(), r.getHotel().getId())))
                         .collect(Collectors.toList());
+=======
+            // Si un split est en cours, finir celui-ci avant de passer à un autre client.
+            ReservationSim principale;
+            if (reservationEnCours != null && pending.contains(reservationEnCours)) {
+                principale = reservationEnCours;
+            } else {
+                principale = candidats.stream()
+                        .max(Comparator.comparingInt(ReservationSim::getNbPassager)
+                                .thenComparing(ReservationSim::getDateHeure))
+                        .orElse(candidats.get(0));
+                reservationEnCours = null;
+            }
+
+            List<Vehicule> disponibles = tousVehicules.stream()
+                    .filter(v -> !vehiculeDisponible.getOrDefault(v.getId(), debutJournee).isAfter(maxDepart))
+                    .collect(Collectors.toList());
+
+            if (disponibles.isEmpty()) {
+                LocalDateTime prochaineDisponibilite = vehiculeDisponible.values().stream()
+                    .min(LocalDateTime::compareTo)
+                    .orElse(null);
+
+                if (prochaineDisponibilite != null) {
+                    LocalDateTime prochaineReservationFuture = pending.stream()
+                            .filter(r -> r != principale)
+                            .map(ReservationSim::getDateHeure)
+                            .filter(h -> h.isAfter(principale.getDateHeure()))
+                            .min(LocalDateTime::compareTo)
+                            .orElse(null);
+
+                    LocalDateTime nouveauCreneau = prochaineDisponibilite;
+                    if (prochaineReservationFuture != null && prochaineReservationFuture.isAfter(nouveauCreneau)) {
+                        nouveauCreneau = prochaineReservationFuture;
+                    }
+
+                    principale.setDateHeureSimulee(nouveauCreneau);
+                    continue;
+                }
+
+                nonAssignes.add(new PlanificationNonAssigne(
+                    date,
+                    principale.getReservation(),
+                    principale.getNbPassager(),
+                    "Aucun véhicule disponible"));
+                pending.remove(principale);
+                continue;
+            }
+
+            Vehicule choisi = choisirVehicule(tousVehicules, vehiculeDisponible, vehiculeNbTrajets,
+                    maxDepart, principale.getNbPassager(), random);
+
+            if (choisi == null) {
+                nonAssignes.add(new PlanificationNonAssigne(
+                        date,
+                        principale.getReservation(),
+                        principale.getNbPassager(),
+                        "Aucun véhicule disponible pour cette réservation"));
+                pending.remove(principale);
+                continue;
+            }
+
+            int pris = Math.min(principale.getNbPassager(), choisi.getCapacite());
+                int placesRestantes = choisi.getCapacite() - pris;
+
+                List<ReservationSim> allocations = new ArrayList<>();
+                allocations.add(new ReservationSim(principale, pris));
+
+                principale.remaining -= pris;
+
+                ReservationSim prochaineReservationEnCours = principale.getNbPassager() > 0 ? principale : null;
+
+                // Remplir les places restantes avec une allocation optimale globale.
+                if (placesRestantes > 0) {
+                    List<ReservationSim> suivants = candidats.stream()
+                    .filter(r -> !r.getId().equals(principale.getId()))
+                    .filter(r -> r.getNbPassager() > 0)
+                    .collect(Collectors.toList());
+
+                    List<Allocation> optimales = choisirAllocationsOptimales(
+                            suivants, placesRestantes);
+
+                    for (Allocation a : optimales) {
+                        if (a.quantite <= 0) continue;
+                        allocations.add(new ReservationSim(a.reservation, a.quantite));
+                        a.reservation.remaining -= a.quantite;
+
+                }
+                }
+
+                List<ReservationSim> routeOrdonnee = allocations.stream()
+                    .sorted(Comparator.comparingDouble(r ->
+                        distanceService.getDistanceKm(aeroport.getId(), r.getHotel().getId())))
+                    .collect(Collectors.toList());
+
+                LocalDateTime heureDernierClient = routeOrdonnee.stream()
+                    .map(ReservationSim::getDateHeure)
+                    .max(LocalDateTime::compareTo)
+                    .orElse(principale.getDateHeure());
+
+                LocalDateTime dispoVehicule = vehiculeDisponible
+                    .getOrDefault(choisi.getId(), debutJournee);
+
+                LocalDateTime depart = heureDernierClient.isAfter(dispoVehicule)
+                    ? heureDernierClient
+                    : dispoVehicule;
+>>>>>>> parent of 3c9df05 (Fix vrai)
 
                 /* Calculer le temps du trajet multi-stops */
                 long tempsTrajetMin = calculerTempsTrajet(routeOrdonnee, aeroport, vitesseMoyenne);
+<<<<<<< HEAD
                 LocalDateTime retour = creneau.plusMinutes(tempsTrajetMin);
 
                 /* Noms des hôtels dans l'ordre de visite (pour affichage) */
@@ -229,16 +343,22 @@ public class AssignmentService {
                         .map(r -> r.getHotel().getNom())
                         .collect(Collectors.toList());
                 boolean combined = trajet.size() > 1;
+=======
+                LocalDateTime retour = depart.plusMinutes(tempsTrajetMin);
+
+                vehiculeNbTrajets.compute(choisi.getId(), (k, v) -> v == null ? 1 : v + 1);
+                vehiculeDisponible.put(choisi.getId(), retour);
+>>>>>>> parent of 3c9df05 (Fix vrai)
 
                 /* Construire les ResInfo dans l'ordre de visite */
                 List<Planning.ResInfo> resInfos = routeOrdonnee.stream()
-                        .map(r -> new Planning.ResInfo(
-                                r.getId(),
-                                r.getIdClient(),
-                                r.getNbPassager(),
-                                r.getHotel().getNom(),
-                                distanceService.getDistanceKm(aeroport.getId(), r.getHotel().getId())))
-                        .collect(Collectors.toList());
+                    .map(r -> new Planning.ResInfo(
+                        r.getId(),
+                        r.getIdClient(),
+                        r.getNbPassager(),
+                        r.getHotel().getNom(),
+                        distanceService.getDistanceKm(aeroport.getId(), r.getHotel().getId())))
+                    .collect(Collectors.toList());
 
                 /* Un seul Planning par trajet (qu'il soit simple ou combiné) */
                 Planning row = new Planning(resInfos, creneau, retour, choisi, combined, routeHotels);
@@ -634,8 +754,21 @@ public class AssignmentService {
 
         if (candidats.isEmpty()) return null;
 
+<<<<<<< HEAD
         int minCap = candidats.stream().mapToInt(Vehicule::getCapacite).min().getAsInt();
         List<Vehicule> plusPetits = candidats.stream()
+=======
+        int minTrajets = candidats.stream()
+                .mapToInt(v -> vehiculeNbTrajets.getOrDefault(v.getId(), 0))
+                .min()
+                .orElse(0);
+        List<Vehicule> meilleurs = candidats.stream()
+                .filter(v -> vehiculeNbTrajets.getOrDefault(v.getId(), 0) == minTrajets)
+                .collect(Collectors.toList());
+
+        int minCap = meilleurs.stream().mapToInt(Vehicule::getCapacite).min().getAsInt();
+        List<Vehicule> plusPetits = meilleurs.stream()
+>>>>>>> parent of 3c9df05 (Fix vrai)
                 .filter(v -> v.getCapacite() == minCap)
                 .collect(Collectors.toList());
 
