@@ -25,11 +25,11 @@
             </label>
             <input type="date" id="date" name="date" th:value="${filterDate}"
                    style="padding:9px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:0.9rem; outline:none; min-width:180px;">
-            <button type="submit" class="btn-action btn-primary-action">🔍 Simuler</button>
+            <button type="submit" class="btn-action btn-primary-action">🔍 Planifier</button>
             <a th:href="@{/planification}" class="btn-action btn-secondary-action">✕ Effacer</a>
         </form>
         <p th:if="${filterDate == null}" style="margin-top:12px; font-size:0.85rem; color:#9ca3af; font-style:italic;">
-            Sélectionnez une date pour lancer la simulation d'assignation des véhicules.
+            Sélectionnez une date pour lancer la planification des assignations de véhicules.
         </p>
     </div>
 

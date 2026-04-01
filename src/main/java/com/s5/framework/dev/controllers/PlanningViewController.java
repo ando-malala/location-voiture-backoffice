@@ -16,8 +16,8 @@ import com.s5.framework.dev.services.AssignmentService;
 import com.s5.framework.dev.services.AssignmentService.SimulationResult;
 
 /**
- * Contrôleur Spring MVC pour la page Planification (simulation statique).
- * Aucune persistance — calcul à la volée selon la date choisie.
+ * Contrôleur Spring MVC pour la page Planification.
+ * Le calcul est exécuté à la volée et le résultat du jour est persisté.
  */
 @Controller
 @RequestMapping("/planification")
@@ -32,7 +32,7 @@ public class PlanningViewController {
 
     /**
      * GET /planification                  → page avec sélecteur de date
-     * GET /planification?date=yyyy-MM-dd  → simulation pour la date donnée
+      * GET /planification?date=yyyy-MM-dd  → planification pour la date donnée
      */
     @GetMapping
     public String planification(@RequestParam(required = false) String date, Model model) {
@@ -44,19 +44,9 @@ public class PlanningViewController {
             try {
                 SimulationResult result = assignmentService.simuler(localDate);
                 model.addAttribute("assigned", result.assigned);
-                model.addAttribute("unassigned", result.nonAssigned);
-
-                int unassignedPassengers = result.nonAssigned.stream()
-                        .mapToInt(PlanificationNonAssigne::getNbPassager)
-                        .sum();
-                int assignedPassengers = result.assigned.stream()
-                        .mapToInt(Planning::getTotalPassagers)
-                        .sum();
-
-                model.addAttribute("assignedPassengers", assignedPassengers);
-                model.addAttribute("unassignedPassengers", unassignedPassengers);
+                model.addAttribute("unassigned", result.unassigned);
             } catch (RuntimeException e) {
-                model.addAttribute("errorMessage", "Erreur lors de la simulation : " + e.getMessage());
+                model.addAttribute("errorMessage", "Erreur lors de la planification : " + e.getMessage());
                 model.addAttribute("assigned", List.of());
                 model.addAttribute("unassigned", List.of());
             }
