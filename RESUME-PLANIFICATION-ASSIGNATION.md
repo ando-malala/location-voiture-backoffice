@@ -18,3 +18,6 @@ Après préparation des trajets du groupe:
   - `departTrajet = max(derniereReservationAssigneeDuGroupe, heureRetourPrecedenteVehicule)`.
 
 
+Voici maintenant comment marche l'assignation des voitures:
+
+Si une voiture est de retour d'un trajet, il traite en priorite les reservations non assigne, SI ce voiture de retour d'un trajet est plein il part tout de suite . SI les reservations NON ASSIGNES NE REMPLISSENT pas le voiture alors il fait un regroupement avec les reservations simples , c'est a dire comme les regles anterieurs
