@@ -46,6 +46,21 @@ import com.s5.framework.dev.repositories.VehiculeRepository;
 @Service
 public class AssignmentService {
 
+    private enum ClusterType {
+        VOL,
+        VEHICULE
+    }
+
+    private static class ClusterContext {
+        final ClusterType type;
+        final LocalDateTime start;
+
+        ClusterContext(ClusterType type, LocalDateTime start) {
+            this.type = type;
+            this.start = start;
+        }
+    }
+
     private final VehiculeRepository vehiculeRepository;
     private final HostelRepository hostelRepository;
     private final DistanceService distanceService;
@@ -92,17 +107,20 @@ public class AssignmentService {
         final Reservation reservation;
         int remaining;
         LocalDateTime dateHeureSimulee;
+        boolean prioritaire;
 
         ReservationSim(Reservation reservation) {
             this.reservation = reservation;
             this.remaining = reservation.getNbPassager();
             this.dateHeureSimulee = reservation.getDateHeure();
+            this.prioritaire = false;
         }
 
         ReservationSim(ReservationSim source, int remaining) {
             this.reservation = source.reservation;
             this.remaining = remaining;
             this.dateHeureSimulee = source.dateHeureSimulee;
+            this.prioritaire = source.prioritaire;
         }
 
         public Long getId()               { return reservation.getId(); }
@@ -111,8 +129,10 @@ public class AssignmentService {
         public LocalDateTime getDateHeure(){ return dateHeureSimulee; }
         public Hostel getHotel()           { return reservation.getHotel(); }
         public Reservation getReservation(){ return reservation; }
+        public boolean isPrioritaire()   { return prioritaire; }
 
         public void setDateHeureSimulee(LocalDateTime dt) { this.dateHeureSimulee = dt; }
+        public void setPrioritaire(boolean prioritaire) { this.prioritaire = prioritaire; }
     }
 
     private static class Allocation {
@@ -181,68 +201,71 @@ public class AssignmentService {
 
         Random random = new Random();
 
-        /* 5 — Traiter les réservations par batch (fenêtre de temps d'attente). */
+        /* 5 — Traiter les réservations par regroupements événementiels. */
         List<ReservationSim> pending = new ArrayList<>(reservations);
 
         while (!pending.isEmpty()) {
-            // Fenêtre d'attente : plus ancienne réservation non traitée.
-            LocalDateTime earliest = pending.stream()
-                    .map(ReservationSim::getDateHeure)
-                    .min(LocalDateTime::compareTo)
-                    .orElse(debutJournee);
+            ClusterContext cluster = determinerCluster(pending, vehiculeDisponible);
+            LocalDateTime earliest = cluster.start;
             LocalDateTime maxDepart = earliest.plusMinutes(tempsAttente);
 
+            List<Vehicule> disponiblesAuDebut = tousVehicules.stream()
+                .filter(v -> !vehiculeDisponible.getOrDefault(v.getId(), debutJournee).isAfter(earliest))
+                .collect(Collectors.toList());
+
+            List<ReservationSim> triPrincipal = trierPourPriorite(pending.stream()
+                .filter(r -> r.getNbPassager() > 0)
+                .filter(r -> !r.getDateHeure().isAfter(earliest))
+                .collect(Collectors.toList()));
+
+            boolean departImmediatVehicule = false;
+            if (cluster.type == ClusterType.VEHICULE && !disponiblesAuDebut.isEmpty() && !triPrincipal.isEmpty()) {
+            Vehicule meilleur = choisirVehiculeDansBatch(disponiblesAuDebut, vehiculeDisponible,
+                vehiculeNbTrajets, earliest, triPrincipal.get(0).getNbPassager(), random);
+            departImmediatVehicule = meilleur != null
+                && triPrincipal.get(0).getNbPassager() >= meilleur.getCapacite();
+            }
+
+            LocalDateTime finFenetre = (cluster.type == ClusterType.VEHICULE && departImmediatVehicule)
+                ? earliest
+                : maxDepart;
+
             List<ReservationSim> candidats = pending.stream()
-                    .filter(r -> !r.getDateHeure().isAfter(maxDepart))
-                    .collect(Collectors.toList());
+                .filter(r -> r.getNbPassager() > 0)
+                .filter(r -> !r.getDateHeure().isAfter(finFenetre))
+                .collect(Collectors.toList());
 
             if (candidats.isEmpty()) {
-                break;
+            LocalDateTime prochainDeclencheur = calculerProchainDeclencheur(
+                earliest, pending, vehiculeDisponible, tempsAttente);
+            for (ReservationSim r : pending) {
+                if (r.getNbPassager() > 0 && !r.getDateHeure().isAfter(earliest)) {
+                r.setDateHeureSimulee(prochainDeclencheur);
+                r.setPrioritaire(true);
+                }
+            }
+            pending.removeIf(r -> r.getNbPassager() <= 0);
+            continue;
             }
 
-            // Véhicules disponibles dans cette fenêtre.
             List<Vehicule> disponibles = tousVehicules.stream()
-                    .filter(v -> !vehiculeDisponible.getOrDefault(v.getId(), debutJournee).isAfter(maxDepart))
-                    .collect(Collectors.toList());
+                .filter(v -> !vehiculeDisponible.getOrDefault(v.getId(), debutJournee).isAfter(finFenetre))
+                .collect(Collectors.toList());
 
             if (disponibles.isEmpty()) {
-                // Aucun véhicule dispo dans la fenêtre : décaler la réservation la plus ancienne.
-                ReservationSim plusAncienne = candidats.stream()
-                        .min(Comparator.comparing(ReservationSim::getDateHeure))
-                        .orElse(candidats.get(0));
-
-                LocalDateTime prochaineDisponibilite = vehiculeDisponible.values().stream()
-                        .min(LocalDateTime::compareTo)
-                        .orElse(null);
-
-                if (prochaineDisponibilite != null) {
-                    LocalDateTime prochaineReservationFuture = pending.stream()
-                            .filter(r -> r != plusAncienne)
-                            .map(ReservationSim::getDateHeure)
-                            .filter(h -> h.isAfter(plusAncienne.getDateHeure()))
-                            .min(LocalDateTime::compareTo)
-                            .orElse(null);
-
-                    LocalDateTime nouveauCreneau = prochaineDisponibilite;
-                    if (prochaineReservationFuture != null && prochaineReservationFuture.isAfter(nouveauCreneau)) {
-                        nouveauCreneau = prochaineReservationFuture;
-                    }
-                    plusAncienne.setDateHeureSimulee(nouveauCreneau);
-                    continue;
+            LocalDateTime prochainDeclencheur = calculerProchainDeclencheur(
+                finFenetre, pending, vehiculeDisponible, tempsAttente);
+            for (ReservationSim c : candidats) {
+                if (c.getNbPassager() > 0) {
+                c.setDateHeureSimulee(prochainDeclencheur);
+                c.setPrioritaire(true);
                 }
-
-                nonAssignes.add(new PlanificationNonAssigne(
-                        date, plusAncienne.getReservation(), plusAncienne.getNbPassager(),
-                        "Aucun véhicule disponible"));
-                pending.remove(plusAncienne);
-                continue;
+            }
+            pending.removeIf(r -> r.getNbPassager() <= 0);
+            continue;
             }
 
-            // --- Traitement batch : assigner tous les candidats de la fenêtre ---
-
-            // Trier les candidats par nbPassager décroissant (les plus gros d'abord).
-            candidats.sort(Comparator.comparingInt(ReservationSim::getNbPassager).reversed()
-                    .thenComparing(ReservationSim::getDateHeure));
+            candidats = trierPourPriorite(candidats);
 
             // Copie locale des véhicules disponibles pour ce batch.
             List<Vehicule> vehiculesBatch = new ArrayList<>(disponibles);
@@ -276,8 +299,7 @@ public class AssignmentService {
                 if (principale == null) {
                     principale = candidats.stream()
                             .filter(r -> r.getNbPassager() > 0)
-                            .sorted(Comparator.comparingInt(ReservationSim::getNbPassager).reversed()
-                                    .thenComparing(ReservationSim::getDateHeure))
+                        .sorted(this::comparerPriorite)
                             .findFirst()
                             .orElse(null);
                 }
@@ -301,6 +323,7 @@ public class AssignmentService {
                 List<ReservationSim> allocations = new ArrayList<>();
                 allocations.add(new ReservationSim(principale, pris));
                 principale.remaining -= pris;
+                principale.setPrioritaire(principale.getNbPassager() > 0);
 
                 if (principale.getNbPassager() > 0) {
                     restesPrioritairesBatch.add(principale.getId());
@@ -322,6 +345,7 @@ public class AssignmentService {
                         if (a.quantite <= 0) continue;
                         allocations.add(new ReservationSim(a.reservation, a.quantite));
                         a.reservation.remaining -= a.quantite;
+                        a.reservation.setPrioritaire(a.reservation.getNbPassager() > 0);
                     }
                 }
 
@@ -332,34 +356,36 @@ public class AssignmentService {
             }
 
             if (batchTrips.isEmpty()) {
-                // Aucun trajet n'a pu être fait : marquer les candidats non assignables.
+                // Aucun trajet : reporter les candidats restants au prochain déclencheur.
+                LocalDateTime prochainDeclencheur = calculerProchainDeclencheur(
+                    finFenetre, pending, vehiculeDisponible, tempsAttente);
                 for (ReservationSim c : candidats) {
                     if (c.getNbPassager() > 0) {
-                        nonAssignes.add(new PlanificationNonAssigne(
-                                date, c.getReservation(), c.getNbPassager(),
-                                "Aucun véhicule disponible pour cette réservation"));
-                        c.remaining = 0;
+                    c.setDateHeureSimulee(prochainDeclencheur);
+                    c.setPrioritaire(true);
                     }
                 }
                 pending.removeIf(r -> r.getNbPassager() <= 0);
                 continue;
             }
 
-            // Calculer le départ unique du batch :
-            // max(dernière heure d'arrivée de tous les candidats de la fenêtre,
-            //     dernière disponibilité parmi les véhicules UTILISÉS dans le batch)
-            LocalDateTime latestClientTime = candidats.stream()
+                LocalDateTime batchDepart;
+                if (cluster.type == ClusterType.VEHICULE && departImmediatVehicule) {
+                batchDepart = earliest;
+                } else {
+                LocalDateTime latestClientTime = candidats.stream()
                     .map(ReservationSim::getDateHeure)
                     .max(LocalDateTime::compareTo)
                     .orElse(earliest);
 
-            LocalDateTime latestVehicleDispo = batchTrips.stream()
+                LocalDateTime latestVehicleDispo = batchTrips.stream()
                     .map(bt -> vehiculeDisponible.getOrDefault(bt.vehicule.getId(), debutJournee))
                     .max(LocalDateTime::compareTo)
                     .orElse(debutJournee);
 
-            LocalDateTime batchDepart = latestClientTime.isAfter(latestVehicleDispo)
+                batchDepart = latestClientTime.isAfter(latestVehicleDispo)
                     ? latestClientTime : latestVehicleDispo;
+                }
 
             // Créer les Planning pour chaque trajet du batch.
             for (BatchTrip bt : batchTrips) {
@@ -401,13 +427,102 @@ public class AssignmentService {
                         String.join(" \u2192 ", routeHotels), reservationsTrajet));
             }
 
+            LocalDateTime prochainDeclencheur = calculerProchainDeclencheur(
+                    finFenetre, pending, vehiculeDisponible, tempsAttente);
+            for (ReservationSim c : candidats) {
+                if (c.getNbPassager() > 0) {
+                    c.setDateHeureSimulee(prochainDeclencheur);
+                    c.setPrioritaire(true);
+                }
+            }
+
             pending.removeIf(r -> r.getNbPassager() <= 0);
+        }
+
+        for (ReservationSim restant : pending) {
+            if (restant.getNbPassager() > 0) {
+                nonAssignes.add(new PlanificationNonAssigne(
+                        date,
+                        restant.getReservation(),
+                        restant.getNbPassager(),
+                        "Non assignée en fin de simulation"));
+            }
         }
 
         planificationService.savePlanifications(planifications);
         planificationService.saveNonAssignes(nonAssignes);
 
         return new SimulationResult(assigned, nonAssignes);
+    }
+
+    private ClusterContext determinerCluster(List<ReservationSim> pending,
+                                             Map<Long, LocalDateTime> vehiculeDisponible) {
+        LocalDateTime prochaineReservation = pending.stream()
+                .filter(r -> r.getNbPassager() > 0)
+                .map(ReservationSim::getDateHeure)
+                .min(LocalDateTime::compareTo)
+                .orElse(LocalDateTime.MAX);
+
+        LocalDateTime prochainVehicule = vehiculeDisponible.values().stream()
+                .min(LocalDateTime::compareTo)
+                .orElse(LocalDateTime.MAX);
+
+        boolean reservationAvantOuEgaleVehicule = !prochaineReservation.isAfter(prochainVehicule);
+        if (reservationAvantOuEgaleVehicule && !prochaineReservation.equals(prochainVehicule)) {
+            return new ClusterContext(ClusterType.VOL, prochaineReservation);
+        }
+
+        if (prochaineReservation.equals(prochainVehicule)) {
+            return new ClusterContext(ClusterType.VEHICULE, prochaineReservation);
+        }
+
+        boolean hasPendingForVehicle = pending.stream()
+                .anyMatch(r -> r.getNbPassager() > 0 && !r.getDateHeure().isAfter(prochainVehicule));
+
+        if (hasPendingForVehicle) {
+            return new ClusterContext(ClusterType.VEHICULE, prochainVehicule);
+        }
+
+        return new ClusterContext(ClusterType.VOL, prochaineReservation);
+    }
+
+    private List<ReservationSim> trierPourPriorite(List<ReservationSim> reservations) {
+        return reservations.stream()
+                .sorted(this::comparerPriorite)
+                .collect(Collectors.toList());
+    }
+
+    private int comparerPriorite(ReservationSim a, ReservationSim b) {
+        if (a.isPrioritaire() != b.isPrioritaire()) {
+            return a.isPrioritaire() ? -1 : 1;
+        }
+        int bySize = Integer.compare(b.getNbPassager(), a.getNbPassager());
+        if (bySize != 0) return bySize;
+        return a.getDateHeure().compareTo(b.getDateHeure());
+    }
+
+    private LocalDateTime calculerProchainDeclencheur(LocalDateTime reference,
+                                                      List<ReservationSim> pending,
+                                                      Map<Long, LocalDateTime> vehiculeDisponible,
+                                                      int tempsAttente) {
+        LocalDateTime prochaineReservation = pending.stream()
+                .filter(r -> r.getNbPassager() > 0)
+                .map(ReservationSim::getDateHeure)
+                .filter(dt -> dt.isAfter(reference))
+                .min(LocalDateTime::compareTo)
+                .orElse(null);
+
+        LocalDateTime prochainVehicule = vehiculeDisponible.values().stream()
+                .filter(dt -> dt.isAfter(reference))
+                .min(LocalDateTime::compareTo)
+                .orElse(null);
+
+        if (prochaineReservation == null && prochainVehicule == null) {
+            return reference.plusMinutes(tempsAttente);
+        }
+        if (prochaineReservation == null) return prochainVehicule;
+        if (prochainVehicule == null) return prochaineReservation;
+        return prochaineReservation.isBefore(prochainVehicule) ? prochaineReservation : prochainVehicule;
     }
 
     // ------------------------------------------------------------------ //

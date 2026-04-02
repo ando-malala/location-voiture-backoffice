@@ -18,3 +18,6 @@ Après préparation des trajets du groupe:
   - `departTrajet = max(derniereReservationAssigneeDuGroupe, heureRetourPrecedenteVehicule)`.
 
 
+Voici maintenant les conditions a respecter si ce n'est deja fait:
+
+
