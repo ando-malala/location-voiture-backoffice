@@ -5,9 +5,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -245,12 +247,44 @@ public class AssignmentService {
             // Copie locale des véhicules disponibles pour ce batch.
             List<Vehicule> vehiculesBatch = new ArrayList<>(disponibles);
 
+            // Restes créés dans ce batch (uniquement après une assignation "principale").
+            // Cela permet de finir une réservation déjà entamée dans ce même batch,
+            // sans imposer la priorité d'un reste d'un batch précédent.
+            Set<Long> restesPrioritairesBatch = new LinkedHashSet<>();
+
             // Stocker les trajets planifiés dans ce batch.
             List<BatchTrip> batchTrips = new ArrayList<>();
 
-            for (int i = 0; i < candidats.size(); i++) {
-                ReservationSim principale = candidats.get(i);
-                if (principale.getNbPassager() <= 0) continue;
+            while (!vehiculesBatch.isEmpty()) {
+                ReservationSim principale = null;
+
+                // 1) Priorité aux restes créés dans le batch courant.
+                for (Long reservationId : new ArrayList<>(restesPrioritairesBatch)) {
+                    ReservationSim candidate = candidats.stream()
+                            .filter(r -> r.getId().equals(reservationId))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (candidate != null && candidate.getNbPassager() > 0) {
+                        principale = candidate;
+                        break;
+                    }
+                    restesPrioritairesBatch.remove(reservationId);
+                }
+
+                // 2) Sinon, plus grosse réservation restante de la fenêtre.
+                if (principale == null) {
+                    principale = candidats.stream()
+                            .filter(r -> r.getNbPassager() > 0)
+                            .sorted(Comparator.comparingInt(ReservationSim::getNbPassager).reversed()
+                                    .thenComparing(ReservationSim::getDateHeure))
+                            .findFirst()
+                            .orElse(null);
+                }
+
+                if (principale == null) {
+                    break;
+                }
 
                 // Chercher le meilleur véhicule pour cette réservation.
                 Vehicule choisi = choisirVehiculeDansBatch(vehiculesBatch, vehiculeDisponible,
@@ -268,10 +302,17 @@ public class AssignmentService {
                 allocations.add(new ReservationSim(principale, pris));
                 principale.remaining -= pris;
 
+                if (principale.getNbPassager() > 0) {
+                    restesPrioritairesBatch.add(principale.getId());
+                } else {
+                    restesPrioritairesBatch.remove(principale.getId());
+                }
+
                 // Remplir les places restantes avec les plus petites réservations.
                 if (placesRestantes > 0) {
+                    Long idPrincipale = principale.getId();
                     List<ReservationSim> suivants = candidats.stream()
-                            .filter(r -> !r.getId().equals(principale.getId()))
+                        .filter(r -> !r.getId().equals(idPrincipale))
                             .filter(r -> r.getNbPassager() > 0)
                             .collect(Collectors.toList());
 
